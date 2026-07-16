@@ -1,0 +1,43 @@
+Zone mappings
+
+Rules:
+
+Layer name must match the qs:layer attribute on the .svg map exactly (case does not matter).
+Use - separators.
+Controller must be yard or field.
+Zone number must be numeric.
+The line must be under the matching section header.
+Case does not matter for layer/header/controller.
+Blank lines are okay.
+Extra description after the zone number is okay.
+
+Layer names on .svg map for coverage:
+
+Yard Coverage Layer
+yd_cov_garage_south - yard zone 1 - garage south
+yd_cov_garage_east - yard zone 1 - garage east
+yd_cov_south - yard zone 2 - south yard
+yd_cov_se - yard zone 2 - south east yard
+yd_cov_well - yard zone 3 - well house
+yd_cov_north - yard zone 3 - north house
+yd_cov_west - yard zone 4 - west yard
+yd_cov_pool_east - yard zone 5 - pool edge, east yard
+yd_cov_pool_west - yard zone 5 - above pool, west side
+yd_cov_west_fence - yard zone 7 - west fence
+yd_cov_south_fence - yard zone 8 - south fence yard
+yd_cov_blockwall - yard zone 10 - block wall
+yd_cov_patio - yard zone 11 - patio
+
+Field Coverage Layer
+f_cov_1 - field zone 1 - big gun
+f_cov_2 - field zone 2 - block wall
+f_cov_3 - field zone 3 - south east next to fence
+f_cov_4 - field zone 4 - between 6 - 11
+f_cov_5 - field zone 5 - between 3 - 6
+f_cov_6 - field zone 6 - middle
+f_cov_7 - field zone 7 - north of shed
+f_cov_8 - field zone 9 - vineyard sprinklers, wired with f_cov_9
+f_cov_9 - field zone 9 - vineyard
+f_cov_10 - field zone 10 - south big gun
+f_cov_11 - field zone 11 - center
+f_cov_12 - field zone 12 - north fence

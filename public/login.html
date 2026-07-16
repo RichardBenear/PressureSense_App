@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PressureSense — Sign in</title>
+  <meta content="noindex, nofollow" name="robots" />
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600&family=Barlow+Condensed:wght@500;700&display=swap" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Login-only layout. Reuses the site palette/fonts from style.css; these
+       rules just center a single card and are scoped so they never leak into
+       the dashboard. */
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 380px;
+      background: #0e1a2b;
+      border: 1px solid #1c3350;
+      border-radius: 12px;
+      padding: 32px 28px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+    }
+    .login-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 22px;
+    }
+    .login-brand {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 26px;
+      letter-spacing: 1px;
+      color: #e8f4fd;
+    }
+    .login-brand span { color: #0d6efd; }
+    .login-sub {
+      text-align: center;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: #5f7da0;
+      letter-spacing: 1px;
+      margin-bottom: 24px;
+    }
+    .login-field { margin-bottom: 16px; }
+    .login-field label {
+      display: block;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: #6f8bad;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .login-field input {
+      width: 100%;
+      box-sizing: border-box;
+      background: #08111d;
+      border: 1px solid #23405f;
+      border-radius: 8px;
+      color: #e8f4fd;
+      font-family: 'Barlow', sans-serif;
+      font-size: 16px;
+      padding: 12px 14px;
+      outline: none;
+    }
+    .login-field input:focus { border-color: #0d6efd; }
+    .login-btn {
+      width: 100%;
+      background: #0d6efd;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: 1px;
+      padding: 13px;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+    .login-btn:hover { background: #2b7cff; }
+    .login-btn:disabled { opacity: 0.6; cursor: default; }
+    .login-error {
+      color: #ef4444;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      text-align: center;
+      min-height: 18px;
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body class="ag-page">
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">
+        <svg width="40" height="40" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="22" cy="22" r="21" fill="#0e1a2b" stroke="#1a5fcc" stroke-width="1.5"/>
+          <path d="M 6.4 31 A 18 18 0 1 1 37.6 31" fill="none" stroke="#1a2a44" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M 6.4 31 A 18 18 0 0 1 25 4" fill="none" stroke="#0d6efd" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="24" y2="9" stroke="#ff4433" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="22" cy="22" r="2.5" fill="#ccddff" stroke="#fff" stroke-width="0.5"/>
+        </svg>
+        <div class="login-brand">PRESSURE<span>SENSE</span></div>
+      </div>
+      <div class="login-sub">REMOTE ACCESS</div>
+
+      <div class="login-field">
+        <label for="pw">Password</label>
+        <input id="pw" type="password" autocomplete="current-password" autofocus />
+      </div>
+      <button id="login-btn" class="login-btn">Sign in</button>
+      <div id="login-error" class="login-error"></div>
+    </div>
+  </div>
+
+  <script>
+    const btn = document.getElementById('login-btn');
+    const pw = document.getElementById('pw');
+    const err = document.getElementById('login-error');
+
+    async function submit() {
+      err.textContent = '';
+      btn.disabled = true;
+      btn.textContent = 'Signing in…';
+      try {
+        const res = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pw.value })
+        });
+        if (res.ok) {
+          // Session cookie is set by the Worker; go to the dashboard.
+          window.location.href = '/';
+          return;
+        }
+        err.textContent = res.status === 401 ? 'Incorrect password.' : 'Sign in failed. Try again.';
+      } catch (e) {
+        err.textContent = 'Network error. Check your connection.';
+      }
+      btn.disabled = false;
+      btn.textContent = 'Sign in';
+    }
+
+    btn.addEventListener('click', submit);
+    pw.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+  </script>
+</body>
+</html>

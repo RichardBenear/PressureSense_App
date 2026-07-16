@@ -1,0 +1,1320 @@
+/* ============================================================
+   PressureSense — style.css
+   Shared stylesheet for index.html, config.html, files.html
+   ============================================================ */
+
+/* ── Reset & Base ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* iOS Safari auto-boosts text it judges too small for a narrow column,
+   ignoring the explicit font-size below it (e.g. .ag-help-text's 11px) --
+   this is why some lines render fine on desktop but huge on an iPhone.
+   Disabling it makes every page render font-size exactly as authored on
+   both. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+body.ag-page {
+  background: #0f1419;
+  font-family: 'Barlow', sans-serif;
+  color: #d4dce4;
+  min-height: 100vh;
+  position: relative;
+}
+
+body.ag-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(8, 13, 19, 0.32) 0%, rgba(10, 17, 24, 0.44) 100%),
+    url("water_waves.jpg") center center / cover no-repeat;
+  filter: brightness(1.28) saturate(1.12);
+  z-index: -1;
+}
+
+/* ── Root shell ───────────────────────────────────────────── */
+.ag-root {
+  background: rgba(7, 11, 16, 0.18);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+.ag-header {
+  background: linear-gradient(90deg, rgba(23, 32, 43, 0.88) 0%, rgba(21, 31, 42, 0.84) 100%);
+  border-bottom: 1px solid #2a3f54;
+  padding: 10px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+.ag-logo { display: flex; align-items: center; gap: 11px; margin-left: -6px; }
+
+.ag-logo-mark {
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 12px rgba(13, 110, 253, 0.4));
+}
+
+.ag-brand {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.5px;
+  color: #e8f4fd;
+  white-space: nowrap;
+}
+.ag-brand span { 
+  background: linear-gradient(90deg, #0d6efd 0%, #0052cc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.ag-version {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: #8ab0ca;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* ── Nav ──────────────────────────────────────────────────── */
+.ag-nav { display: flex; gap: 4px; }
+.ag-nav a {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #8ab0ca;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  position: relative;
+}
+.ag-nav a.active { 
+  background: linear-gradient(135deg, #0d6efd 0%, #0052cc 100%);
+  color: white;
+  box-shadow: 0 4px 16px rgba(13, 110, 253, 0.4);
+}
+.ag-nav a:hover:not(.active) { 
+  color: #60a5fa;
+  background: rgba(13, 110, 253, 0.15);
+}
+
+/* ── Status bar ───────────────────────────────────────────── */
+.ag-status-bar {
+  background: linear-gradient(90deg, rgba(23, 32, 43, 0.82) 0%, rgba(21, 31, 42, 0.78) 100%);
+  border-bottom: 1px solid #2a3f54;
+  padding: 10px 28px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.ag-status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: ag-pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.6);
+}
+.ag-status-dot.offline { background: #ef4444; animation: none; box-shadow: 0 0 12px rgba(239, 68, 68, 0.6); }
+@keyframes ag-pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+.ag-status-item { color: #8ab0ca; display: flex; align-items: center; gap: 6px; font-weight: 500; }
+.ag-status-item .val { color: #60a5fa; font-weight: 600; }
+.ag-status-sep { color: #2a3f54; }
+
+/* ── Body ─────────────────────────────────────────────────── */
+.ag-body { 
+  padding: 16px 16px; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px; 
+  flex: 1;
+}
+
+/* ── Dashboard layout ─────────────────────────────────────── */
+.ag-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 300px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+.ag-left { display: flex; flex-direction: column; gap: 10px; }
+.ag-right { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+/* ── Gauge card ───────────────────────────────────────────── */
+.ag-gauge-card {
+  background: linear-gradient(135deg, rgba(23, 32, 43, 0.84) 0%, rgba(21, 31, 42, 0.8) 100%);
+  border: 1px solid #2a3f54;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+}
+
+.ag-gauge-card:hover {
+  box-shadow: 0 8px 24px rgba(13, 110, 253, 0.15);
+  border-color: rgba(13, 110, 253, 0.3);
+  background: linear-gradient(135deg, #1a232f 0%, #17202b 100%);
+}
+
+.ag-card-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #8ab0ca;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+.ag-gauge-svg { display: block; margin: 0 auto; }
+.ag-psi-unit {
+  font-size: 11px;
+  color: #8ab0ca;
+  letter-spacing: 2px;
+  margin-top: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-weight: 600;
+}
+
+/* ── Stat grid ────────────────────────────────────────────── */
+.ag-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ag-sidebar-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.ag-stat {
+  background: linear-gradient(135deg, rgba(23, 32, 43, 0.84) 0%, rgba(21, 31, 42, 0.8) 100%);
+  border: 1px solid #2a3f54;
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: all 0.3s ease;
+}
+
+.ag-stat:hover {
+  box-shadow: 0 6px 16px rgba(13, 110, 253, 0.12);
+  border-color: rgba(13, 110, 253, 0.25);
+  background: linear-gradient(135deg, #1a232f 0%, #17202b 100%);
+}
+
+.ag-stat-wide { grid-column: 1 / -1; }
+.ag-program-row { display: flex; gap: 8px; margin-top: 8px; }
+.ag-program-row .ag-select, .ag-program-row .ag-btn { flex: 1; }
+
+.ag-divider { border-top: 1px solid #2a3f54; margin: 10px 0; }
+.ag-zone-row { display: flex; gap: 6px; margin-top: 8px; align-items: center; }
+.ag-zone-row .manual-zone-select { flex: 2; min-width: 0; }
+.ag-zone-row .manual-zone-run { flex: 1; min-width: 0; }
+.ag-zone-row .manual-zone-start-btn, .ag-zone-row .manual-zone-stop-btn { flex: 0 0 auto; }
+.ag-manual-zone-row + .ag-manual-zone-row { margin-top: 10px; }
+
+.ag-stat-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #8ab0ca;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.ag-stat-value {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 16px;
+  color: #60a5fa;
+  line-height: 1.2;
+  font-weight: 600;
+}
+.ag-stat-value.ok   { color: #22c55e; }
+.ag-stat-value.warn { color: #f59e0b; }
+.ag-stat-value.err  { color: #ef4444; }
+.ag-stat-unit { font-size: 11px; color: #8ab0ca; font-weight: 500; }
+
+/* ── Zone card ────────────────────────────────────────────── */
+.ag-zone-card {
+  background: linear-gradient(135deg, rgba(23, 32, 43, 0.84) 0%, rgba(21, 31, 42, 0.8) 100%);
+  border: 1px solid #2a3f54;
+  border-left: 4px solid #0d6efd;
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+  transition: all 0.3s ease;
+}
+
+.ag-zone-card:hover {
+  box-shadow: 0 8px 24px rgba(13, 110, 253, 0.2);
+  border-color: rgba(13, 110, 253, 0.4);
+  background: linear-gradient(135deg, #1a232f 0%, #17202b 100%);
+}
+
+.ag-zone-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: #e8f4fd;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.ag-zone-meta {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: #8ab0ca;
+  margin-top: 6px;
+  line-height: 1.8;
+  font-weight: 500;
+}
+
+/* ── Chart card ───────────────────────────────────────────── */
+.ag-chart-card {
+  background: linear-gradient(135deg, rgba(23, 32, 43, 0.86) 0%, rgba(21, 31, 42, 0.82) 100%);
+  border: 1px solid #2a3f54;
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 100%;
+  min-width: 0;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+}
+
+.ag-chart-card:hover {
+  box-shadow: 0 8px 24px rgba(13, 110, 253, 0.15);
+  border-color: rgba(13, 110, 253, 0.3);
+  background: linear-gradient(135deg, #1a232f 0%, #17202b 100%);
+}
+
+.ag-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+.ag-chart-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #60a5fa;
+}
+.ag-range-btns { display: flex; gap: 6px; }
+.ag-range-btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #2a3f54;
+  background: transparent;
+  color: #8ab0ca;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+.ag-range-btn.active,
+.ag-range-btn:hover { 
+  background: linear-gradient(135deg, #0d6efd 0%, #0052cc 100%);
+  color: white; 
+  border-color: #0052cc;
+  box-shadow: 0 4px 16px rgba(13, 110, 253, 0.4);
+}
+
+.ag-chart-legend {
+  display: flex;
+  gap: 20px;
+  margin-top: 12px;
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  flex-shrink: 0;
+}
+
+.ag-chart-file {
+  margin-top: 10px;
+  color: #8ab0ca;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.ag-chart-file span {
+  color: #60a5fa;
+}
+
+.ag-legend-item { 
+  display: flex; 
+  align-items: center; 
+  gap: 6px; 
+  color: #8ab0ca;
+  font-weight: 500;
+}
+.ag-legend-swatch { width: 20px; height: 2px; display: inline-block; }
+
+/* ── Section (config/files) ───────────────────────────────── */
+.ag-section {
+  background: linear-gradient(135deg, rgba(23, 32, 43, 0.88) 0%, rgba(21, 31, 42, 0.84) 100%);
+  border: 1px solid #2a3f54;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+.ag-section-header {
+  padding: 12px 18px;
+  border-bottom: 1px solid #2a3f54;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ag-section-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #60a5fa;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ag-section-body { padding: 16px 18px; }
+
+.ag-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* ── Form elements ────────────────────────────────────────── */
+.ag-field-row { display: flex; align-items: center; gap: 12px; }
+.ag-field-row-compact { gap: 6px; flex-wrap: wrap; }
+.ag-field-sep {
+  color: #3a5068;
+  font-size: 13px;
+  flex-shrink: 0;
+  padding: 0 2px;
+}
+.ag-field-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #8ab0ca;
+  min-width: 160px;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+.ag-input {
+  background: #0f1419;
+  border: 1px solid #2a3f54;
+  border-radius: 6px;
+  color: #d4dce4;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  padding: 8px 12px;
+  flex: 1;
+  outline: none;
+  transition: all 0.2s ease;
+}
+.ag-input:focus { 
+  border-color: #0d6efd;
+  box-shadow: 0 0 8px rgba(13, 110, 253, 0.2);
+}
+
+.ag-select {
+  background: #0f1419;
+  border: 1px solid #2a3f54;
+  border-radius: 6px;
+  color: #d4dce4;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  padding: 6px 10px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.ag-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 8px rgba(13, 110, 253, 0.2);
+}
+.ag-input-unit {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: #8ab0ca;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+.ag-toolbar { display: flex; align-items: center; gap: 8px; }
+.ag-toolbar.ag-toolbar-stack { flex-direction: column; align-items: stretch; }
+.ag-table-toolbar {
+  padding: 10px 18px;
+  border-bottom: 1px solid #2a3f54;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ag-toolbar-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ag-current-file {
+  color: #8ab0ca;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.ag-current-file span {
+  color: #60a5fa;
+}
+
+.ag-save-file-input {
+  flex: none;
+  width: 150px;
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+/* ── Buttons ──────────────────────────────────────────────── */
+.ag-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 7px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.ag-btn-primary { 
+  background: linear-gradient(135deg, #0d6efd 0%, #0052cc 100%);
+  border-color: #0052cc; 
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+.ag-btn-primary:hover { 
+  background: linear-gradient(135deg, #0b5ed7 0%, #003fa6 100%);
+  box-shadow: 0 6px 16px rgba(13, 110, 253, 0.4);
+}
+.ag-btn-ghost { background: transparent; border-color: #2a3f54; color: #60a5fa; }
+.ag-btn-ghost:hover { 
+  background: rgba(13, 110, 253, 0.12);
+  border-color: rgba(13, 110, 253, 0.3);
+}
+.ag-btn-danger { background: transparent; border-color: #7f1d1d; color: #ef4444; }
+.ag-btn-danger:hover { background: rgba(127,29,29,0.15); }
+.ag-btn-sm { padding: 4px 10px; font-size: 11px; }
+
+/* ── Zone table ───────────────────────────────────────────── */
+.ag-zone-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.ag-zone-table th {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #8ab0ca;
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #2a3f54;
+  font-weight: 600;
+}
+.ag-zone-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #17202b;
+  font-size: 12px;
+  vertical-align: middle;
+}
+.ag-zone-table tr:hover td { background: rgba(26,35,47,0.6); }
+.ag-zone-table tr.editing td { background: #1a232f; }
+
+.ag-ctrl-badge {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.ag-ctrl-yard  { background: rgba(13, 110, 253, 0.15); color: #60a5fa; border: 1px solid rgba(13, 110, 253, 0.3); }
+.ag-ctrl-field { background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.25); }
+.ag-ctrl-off   { background: #2a3f54; color: #8ab0ca; }
+
+.ag-program-badge {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  background: #2a3f54;
+  color: #8ab0ca;
+}
+
+.ag-run-adjusted {
+  color: #f59e0b;
+  font-weight: 600;
+  cursor: help;
+}
+
+.ag-psi-val { font-family: 'Share Tech Mono', monospace; font-size: 11px; font-weight: 600; }
+
+.ag-days-pip {
+  display: inline-block;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #2a3f54;
+  color: #8ab0ca;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  line-height: 18px;
+  text-align: center;
+  margin-right: 2px;
+  font-weight: 600;
+}
+.ag-days-pip.on { background: rgba(13,110,253,0.2); color: #60a5fa; border: 1px solid rgba(13,110,253, 0.4); }
+
+.ag-manual-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ag-manual-control .ag-btn {
+  width: 50px;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.ag-manual-state {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: #60a5fa;
+  min-width: 36px;
+}
+
+.ag-manual-state.muted {
+  color: #546c81;
+}
+
+.ag-inline-input {
+  background: #0f1419;
+  border: 1px solid #2a3f54;
+  border-radius: 4px;
+  color: #d4dce4;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  padding: 4px 8px;
+  width: 100%;
+  outline: none;
+  transition: all 0.2s ease;
+}
+.ag-inline-input:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 8px rgba(13, 110, 253, 0.2);
+}
+
+/* ── Zone config: controller sections / program groups ───────── */
+.ag-config-controllers { padding: 12px 18px; }
+
+.ag-controller-section { margin-bottom: 22px; }
+.ag-controller-section:last-child { margin-bottom: 0; }
+/* calibration.html only -- config.html's .ag-controller-section never
+   carries ag-ctrl-yard/field itself (its wash lives on the inner
+   .ag-program-group cards instead), so this can't affect that page. Same
+   gradient values as .ag-program-group.ag-ctrl-yard/field below, so the
+   two pages' tiles match exactly. */
+/* color reset to the page's base text color -- .ag-ctrl-yard/field (the
+   small-badge rule above) also sets color, which would otherwise leak into
+   any plain text here (e.g. the zone name/number cells) that doesn't set
+   its own; cells that DO set their own color (.ag-calib-readonly/-output)
+   are unaffected either way since their own rule is more specific. */
+.ag-controller-section.ag-ctrl-yard {
+  background: linear-gradient(rgba(13, 110, 253, 0.15), rgba(13, 110, 253, 0.15)), #121922;
+  border: 1px solid #1e2d3d;
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 0 0 10px;
+  color: #d4dce4;
+}
+.ag-controller-section.ag-ctrl-field {
+  background: linear-gradient(rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.12)), #121922;
+  border: 1px solid #1e2d3d;
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 0 0 10px;
+  color: #d4dce4;
+}
+/* Avoids double-tinting where the header bar's own ag-ctrl-yard/field
+   background would otherwise layer on top of the section's matching wash. */
+.ag-controller-section.ag-ctrl-yard .ag-controller-header,
+.ag-controller-section.ag-ctrl-field .ag-controller-header {
+  background: transparent;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.ag-controller-header {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #d4dce4;
+  padding: 6px 0;
+  margin-bottom: 8px;
+  border-bottom: 2px solid #2a3f54;
+}
+.ag-controller-header.ag-ctrl-yard  { border-bottom-color: rgba(13, 110, 253, 0.4); }
+.ag-controller-header.ag-ctrl-field { border-bottom-color: rgba(34, 197, 94, 0.35); }
+
+.ag-program-group {
+  background: #121922;
+  border: 1px solid #1e2d3d;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+/* Same controller-color wash as .ag-controller-header, reusing ag-ctrl-yard/field
+   (layered over the card's own base color, rather than a bare alpha
+   background, so the tint stays opaque -- no page texture bleed-through --
+   and applying it at the group level means the header and the zone table
+   body below it share the exact same color, not just the header strip). */
+.ag-program-group.ag-ctrl-yard {
+  background: linear-gradient(rgba(13, 110, 253, 0.15), rgba(13, 110, 253, 0.15)), #121922;
+}
+.ag-program-group.ag-ctrl-field {
+  background: linear-gradient(rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.12)), #121922;
+}
+
+.ag-program-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: #17202b;
+  border-bottom: 1px solid #1e2d3d;
+}
+/* Transparent when the group already carries the controller-color wash, so
+   the header doesn't paint a second, differently-blended tint on top. */
+.ag-program-group.ag-ctrl-yard .ag-program-header,
+.ag-program-group.ag-ctrl-field .ag-program-header {
+  background: transparent;
+}
+
+.ag-program-start, .ag-program-zonecount, .ag-program-duration, .ag-program-endtime {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: #8ab0ca;
+}
+
+.ag-day-badge {
+  display: inline-block;
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  vertical-align: top;
+}
+
+.ag-overlap-warning {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.ag-weather-badge {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: 600;
+  background: rgba(96, 165, 250, 0.15);
+  color: #60a5fa;
+}
+
+.ag-weather-skip-badge {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: 600;
+  background: rgba(13, 110, 253, 0.18);
+  color: #93c5fd;
+}
+
+/* ── Weather deficit chart: tiles, legend, gauge ─────────────── */
+.ag-weather-tiles { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.ag-weather-tile {
+  flex: 1 1 140px;
+  background: #0f1419;
+  border: 1px solid #2a3f54;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.ag-weather-tile-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #8ab0ca;
+  font-weight: 600;
+}
+.ag-weather-tile-value {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 18px;
+  font-weight: 600;
+  color: #d4dce4;
+  margin-top: 2px;
+}
+.ag-weather-tile-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: #546c81;
+}
+.ag-weather-gauge {
+  margin-top: 6px;
+  height: 5px;
+  border-radius: 3px;
+  background: #1a232f;
+  overflow: hidden;
+}
+.ag-weather-gauge-fill {
+  height: 100%;
+  width: 0%;
+  background: #22c55e;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.ag-weather-legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 6px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: #8ab0ca;
+}
+.ag-legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.ag-legend-swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.ag-legend-swatch-forecast {
+  width: 10px; height: 10px; border-radius: 2px; display: inline-block;
+  background: rgba(122, 179, 224, 0.3);
+  border: 1px dashed #7ab3e0;
+}
+.ag-legend-line { width: 14px; height: 2px; background: #e34948; display: inline-block; }
+
+.ag-weather-chart-wrap { position: relative; height: 360px; }
+.ag-weather-chart-msg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(15, 20, 25, 0.85);
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid #2a3f54;
+  pointer-events: none;
+}
+
+.ag-program-header .edit-program-btn { margin-left: auto; }
+
+.ag-program-group .ag-zone-table { table-layout: auto; }
+.ag-program-group .ag-zone-table th,
+.ag-program-group .ag-zone-table td { padding: 6px 8px; }
+
+.ag-drag-handle { cursor: grab; color: #546c81; width: 18px; text-align: center; }
+.ag-program-group tr.dragging { opacity: 0.4; }
+
+.ag-zone-starts-at {
+  /*background: rgba(13, 110, 253, 0.08);*/
+  color: #60a5fa;
+  font-family: 'Share Tech Mono', monospace;
+  font-weight: 600;
+}
+
+.ag-zone-wx-run {
+  color: #8ab0ca;
+  font-family: 'Share Tech Mono', monospace;
+  font-weight: 600;
+}
+
+.ag-wx-pct-low  { color: #ef4444; }
+.ag-wx-pct-high { color: #22c55e; }
+
+.ag-zone-deficit {
+  font-family: 'Share Tech Mono', monospace;
+  font-weight: 600;
+}
+.ag-deficit-low  { color: #22c55e; }
+.ag-deficit-mid  { color: #f59e0b; }
+.ag-deficit-high { color: #ef4444; }
+
+/* ── Zone calibration table -- read-only (blue) vs. key-output (green) ──── */
+.ag-calib-readonly {
+  background: rgba(13, 110, 253, 0.08);
+  color: #60a5fa;
+  font-family: 'Share Tech Mono', monospace;
+}
+.ag-calib-output {
+  color: #22c55e;
+  font-family: 'Share Tech Mono', monospace;
+  font-weight: 600;
+}
+/* Zone#/PSI/mm-min never need more than ~3 digits -- pinning their width
+   (instead of letting table-layout:fixed split space evenly across every
+   column) is what stops Count/Head Type from being squeezed/overlapping on
+   a narrower screen. */
+.ag-calib-narrow { width: 40px; }
+.ag-calib-table-scroll { overflow-x: auto; }
+/* Without a floor, table-layout:fixed keeps shrinking the unconstrained
+   Head Type/Name columns past their content's usable size on a narrow
+   screen (the select/input clip and visually collide) instead of ever
+   triggering the scroll container above. A fixed minimum total width
+   forces the scrollbar to take over at that point instead. */
+.ag-calib-table-scroll table { min-width: 900px; }
+
+.ag-program-group .add-zone-btn { margin: 8px 14px 12px; }
+
+.add-program-btn { margin: 0 0 4px; }
+
+/* ── Program edit popover ─────────────────────────────────────── */
+.ag-popover-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 8, 12, 0.65);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+.ag-popover-backdrop.open { display: flex; }
+
+.ag-program-popover {
+  background: #121922;
+  border: 1px solid #2a3f54;
+  border-radius: 10px;
+  padding: 20px;
+  width: 360px;
+  max-width: 92vw;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+}
+.ag-program-popover .ag-field-row { margin-bottom: 12px; }
+
+.ag-day-toggle-row { display: flex; gap: 4px; flex-wrap: wrap; }
+
+.ag-day-toggle {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: #1a232f;
+  border: 1px solid #2a3f54;
+  color: #8ab0ca;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ag-day-toggle.on { background: rgba(13,110,253,0.2); color: #60a5fa; border-color: rgba(13,110,253,0.5); }
+
+.ag-popover-overlap-warning { min-height: 16px; margin-bottom: 8px; }
+
+.ag-popover-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ── Derived stats ────────────────────────────────────────── */
+.ag-derived-stats {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: #8ab0ca;
+  line-height: 1.8;
+  font-weight: 500;
+}
+.ag-derived-stats span { color: #60a5fa; font-weight: 600; }
+
+/* ── Calibration result ───────────────────────────────────── */
+.ag-calib-result {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: #fbbf24;
+  background: linear-gradient(135deg, #2a2015 0%, #251a0f 100%);
+  border: 1px solid #3d2d1f;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  font-weight: 600;
+}
+.ag-calib-result.hidden { display: none; }
+
+/* ── File list ────────────────────────────────────────────── */
+.ag-file-list {
+  background: #0f1419;
+  border: 1px solid #2a3f54;
+  border-radius: 8px;
+  min-height: 120px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.ag-file-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid #17202b;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: #d4dce4;
+  transition: all 0.2s ease;
+}
+.ag-file-entry:last-child { border-bottom: none; }
+.ag-file-entry:hover { background: rgba(13, 110, 253, 0.08); }
+.ag-file-name { color: #60a5fa; font-weight: 600; }
+.ag-file-size { color: #8ab0ca; font-size: 10px; font-weight: 500; }
+.ag-file-empty { padding: 16px; text-align: center; font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #8ab0ca; font-weight: 500; }
+
+.ag-file-preview {
+  background: #0f1419;
+  border: 1px solid #2a3f54;
+  border-radius: 8px;
+  padding: 14px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: #60a5fa;
+  min-height: 80px;
+  max-height: 300px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.6;
+}
+
+.ag-help-text {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: #8ab0ca;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+/* ── Toast ────────────────────────────────────────────────── */
+.ag-toast {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 1000;
+  background: linear-gradient(135deg, #0d2a1a 0%, #0a1f14 100%);
+  border: 1px solid rgba(34,197,94,0.35);
+  border-left: 4px solid #22c55e;
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: #22c55e;
+  transition: opacity 0.4s;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+  font-weight: 600;
+}
+.ag-toast.hidden { display: none; }
+.ag-toast-icon { font-size: 16px; font-style: normal; font-weight: bold; }
+
+/* ── Footer ───────────────────────────────────────────────── */
+.ag-footer {
+  background: linear-gradient(90deg, rgba(23, 32, 43, 0.82) 0%, rgba(21, 31, 42, 0.78) 100%);
+  border-top: 1px solid #2a3f54;
+  padding: 10px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: #8ab0ca;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  font-weight: 500;
+}
+.ag-footer-right { display: flex; gap: 16px; }
+
+/* ── History selector ─────────────────────────────────────── */
+#history-selector.hidden { display: none !important; }
+.ag-chart-plot {
+  flex: 1;
+  height: 100%;
+  min-height: 220px;
+  min-width: 0;
+}
+
+/* ── Zone map ─────────────────────────────────────────────── */
+.ag-map-page .ag-body {
+  padding: 16px 18px;
+}
+
+.ag-map-body {
+  min-height: 0;
+}
+
+.ag-map-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 190px);
+  border: 1px solid rgba(56, 85, 104, 0.8);
+  background: rgba(10, 18, 24, 0.72);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.24);
+  overflow: hidden;
+}
+
+.ag-map-strip {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.5fr) repeat(4, minmax(90px, 0.8fr)) auto;
+  gap: 1px;
+  background: rgba(56, 85, 104, 0.75);
+  border-bottom: 1px solid rgba(56, 85, 104, 0.9);
+}
+
+.ag-map-stat {
+  min-width: 0;
+  padding: 4px 10px;
+  background: rgba(18, 28, 35, 0.94);
+}
+
+.ag-map-stat span {
+  display: block;
+  margin-bottom: 4px;
+  color: #8ab0ca;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.8px;
+}
+
+.ag-map-stat strong {
+  display: block;
+  overflow: hidden;
+  color: #e8f4fd;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(14px, 1.4vw, 17px);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ag-map-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 4px 12px;
+  background: rgba(18, 28, 35, 0.94);
+}
+
+.ag-map-tool {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #385568;
+  border-radius: 6px;
+  background: rgba(13, 110, 253, 0.08);
+  color: #d4dce4;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.ag-map-view-btn {
+  height: 34px;
+  min-width: 52px;
+  padding: 0 10px;
+  border: 1px solid #385568;
+  border-radius: 6px;
+  background: rgba(13, 110, 253, 0.08);
+  color: #d4dce4;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.ag-map-tool:hover,
+.ag-map-view-btn:hover {
+  background: rgba(13, 110, 253, 0.22);
+  border-color: #60a5fa;
+}
+
+.ag-map-view-btn.active {
+  background: rgba(96, 165, 250, 0.22);
+  border-color: #60a5fa;
+  color: #e8f4fd;
+}
+
+.ag-map-stage {
+  position: relative;
+  flex: 1;
+  min-height: 360px;
+  overflow: hidden;
+  cursor: grab;
+  background: #11181d;
+}
+
+.ag-map-stage:active {
+  cursor: grabbing;
+}
+
+.ag-map-svg-host {
+  width: 100%;
+  height: 100%;
+  background: #11181d;
+}
+
+.ag-map-svg-host svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #11181d;
+  transform-origin: center center;
+  transition: transform 0.08s linear;
+}
+
+.ag-map-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 360px;
+  color: #335160;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 1.2px;
+}
+
+.ag-map-highlight {
+  stroke-width: 0.055 !important;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 0.09px rgba(255,255,255,0.9));
+  opacity: 0.98;
+}
+
+.ag-map-connector {
+  stroke-width: 0.055;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.92;
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .ag-dashboard-grid { grid-template-columns: 1fr; }
+  .ag-two-col { grid-template-columns: 1fr; }
+  .ag-sidebar-summary { grid-template-columns: 1fr 1fr; }
+  .ag-status-bar { gap: 10px; font-size: 10px; }
+  .ag-nav a { padding: 6px 8px; font-size: 11px; }
+  .ag-field-label { min-width: 100px; }
+  .ag-map-strip { grid-template-columns: 1fr 1fr; }
+  .ag-map-tools { justify-content: flex-start; }
+}
+
+/* ── Mobile ≤ 480px (e.g. iPhone 12 portrait) ─────────────── */
+@media (max-width: 480px) {
+  .ag-header { padding: 10px 12px; }
+  .ag-logo { gap: 5px; }
+  .ag-logo-mark { width: 36px; height: 36px; }
+  .ag-brand { font-size: 14px; letter-spacing: 0; }
+  .ag-version { display: none; }
+  .ag-nav { gap: 2px; }
+  .ag-nav a { padding: 5px 5px; font-size: 10px; letter-spacing: 0.3px; border-radius: 6px; }
+  .ag-status-bar { padding: 8px 12px; gap: 8px; }
+  .ag-body { padding: 12px 10px; gap: 14px; }
+  .ag-footer { padding: 10px 12px; flex-direction: column; align-items: flex-start; gap: 4px; }
+  .ag-footer-right { gap: 8px; }
+  .ag-map-page .ag-body { padding: 10px; }
+  .ag-map-panel { min-height: calc(100vh - 176px); }
+  .ag-map-strip { grid-template-columns: 1fr; }
+  .ag-map-stat { padding: 8px 10px; }
+  .ag-map-stat strong { font-size: 18px; }
+  .ag-map-stage { min-height: 420px; }
+}
+
+/* ── Rotate hint — chart page portrait phones ─────────────── */
+.ag-rotate-hint {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  margin-bottom: 6px;
+  background: rgba(13, 110, 253, 0.08);
+  border: 1px solid rgba(13, 110, 253, 0.25);
+  border-radius: 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: #60a5fa;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  .ag-rotate-hint { display: flex; }
+  .ag-chart-plot { min-height: 320px; }
+}
+
+/* ── Rotate block — CONFIG/MAP require landscape on mobile ──── */
+.ag-rotate-block {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  text-align: center;
+  background: #0f1419;
+}
+.ag-rotate-block-icon {
+  font-size: 56px;
+  color: #60a5fa;
+  animation: ag-rotate-block-spin 1.8s ease-in-out infinite;
+}
+.ag-rotate-block-text {
+  max-width: 280px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: #d4dce4;
+}
+@keyframes ag-rotate-block-spin {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(90deg); }
+}
+@media (max-width: 900px) and (orientation: portrait) {
+  .ag-rotate-block { display: flex; }
+}

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PressureSense — Zone Map</title>
+  <meta content="noindex, nofollow" name="robots" />
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600&family=Barlow+Condensed:wght@500;700&display=swap" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="ag-page ag-map-page">
+
+  <div class="ag-rotate-block">
+    <div class="ag-rotate-block-icon">&#8635;</div>
+    <div class="ag-rotate-block-text">Rotate your device to landscape to use the Zone Map</div>
+  </div>
+
+  <div class="ag-root">
+
+    <header class="ag-header">
+      <div class="ag-logo">
+        <svg class="ag-logo-mark" width="44" height="44" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="gf" cx="40%" cy="40%" r="60%">
+              <stop offset="0%" stop-color="#1e2f50"/>
+              <stop offset="100%" stop-color="#080f1f"/>
+            </radialGradient>
+          </defs>
+          <circle cx="22" cy="22" r="21" fill="url(#gf)" stroke="#1a5fcc" stroke-width="1.5"/>
+          <path d="M 6.4 31 A 18 18 0 1 1 37.6 31" fill="none" stroke="#1a2a44" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M 6.4 31 A 18 18 0 0 1 25 4" fill="none" stroke="#0d6efd" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="24" y2="9" stroke="#ff4433" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="21" y2="26" stroke="#cc2211" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="22" cy="22" r="2.5" fill="#ccddff" stroke="#fff" stroke-width="0.5"/>
+          <text x="22" y="37" text-anchor="middle" font-size="5" fill="#6688bb" font-family="sans-serif" font-weight="bold" letter-spacing="0.8">PSI</text>
+        </svg>
+        <div>
+          <div class="ag-brand">PRESSURE<span>SENSE</span></div>
+        </div>
+      </div>
+      <nav class="ag-nav">
+        <a href="index.html">CHART</a>
+        <a href="schedule.html">SCHEDULE</a>
+        <a href="map.html" class="active">MAP</a>
+        <a href="#" id="logout-link">SIGN OUT</a>
+      </nav>
+    </header>
+
+    <div class="ag-status-bar">
+      <div class="ag-status-dot"></div>
+      <div class="ag-status-item">SYSTEM <span class="val" id="system-status">CONNECTING</span></div>
+      <span class="ag-status-sep">|</span>
+      <div class="ag-status-item">ACTIVE ZONE <span class="val" id="map-active-zone">OFF</span></div>
+      <span class="ag-status-sep">|</span>
+      <div class="ag-status-item">CONTROLLER <span class="val" id="map-controller">—</span></div>
+      <span class="ag-status-sep">|</span>
+      <div class="ag-status-item">LAST READ <span class="val" id="last-read">—</span></div>
+    </div>
+
+    <div class="ag-body ag-map-body">
+      <div class="ag-map-panel">
+        <div class="ag-map-strip">
+          <div class="ag-map-stat">
+            <span>ZONE</span>
+            <strong id="map-zone-name">OFF</strong>
+          </div>
+          <div class="ag-map-stat">
+            <span>START</span>
+            <strong id="map-zone-start">—</strong>
+          </div>
+          <div class="ag-map-stat">
+            <span>RUN</span>
+            <strong id="map-zone-run">—</strong>
+          </div>
+          <div class="ag-map-stat">
+            <span>REMAINING</span>
+            <strong id="map-zone-remaining">—</strong>
+          </div>
+          <div class="ag-map-stat">
+            <span>PRESSURE</span>
+            <strong id="map-pressure">—</strong>
+          </div>
+          <div class="ag-map-tools" aria-label="Map controls">
+            <button class="ag-map-view-btn active" id="map-view-full" type="button" title="Full view">FULL</button>
+            <button class="ag-map-view-btn" id="map-view-yard" type="button" title="Yard view">YARD</button>
+            <button class="ag-map-tool" id="map-zoom-out" type="button" title="Zoom out">-</button>
+            <button class="ag-map-tool" id="map-reset" type="button" title="Reset view">&#10227;</button>
+            <button class="ag-map-tool" id="map-zoom-in" type="button" title="Zoom in">+</button>
+          </div>
+        </div>
+        <div class="ag-map-stage" id="map-stage">
+          <div class="ag-map-svg-host" id="map-svg-host">
+            <div class="ag-map-loading" id="map-loading">LOADING MAP</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="ag-footer">
+      <div class="ag-footer-right">
+        <span>MAPPING: <span id="footer-map-status" style="color:#22c55e;">—</span></span>
+        <span>HIGHLIGHTS: <span id="footer-highlight-count" style="color:#5ba4d9;">0</span></span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="map.js" defer></script>
+</body>
+</html>

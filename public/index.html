@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PressureSense — Remote</title>
+  <meta content="noindex, nofollow" name="robots" />
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600&family=Barlow+Condensed:wght@500;700&display=swap" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+</head>
+<body class="ag-page">
+
+  <div class="ag-root">
+
+    <header class="ag-header">
+      <div class="ag-logo">
+        <svg class="ag-logo-mark" width="44" height="44" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="gf" cx="40%" cy="40%" r="60%">
+              <stop offset="0%" stop-color="#1e2f50"/>
+              <stop offset="100%" stop-color="#080f1f"/>
+            </radialGradient>
+          </defs>
+          <circle cx="22" cy="22" r="21" fill="url(#gf)" stroke="#1a5fcc" stroke-width="1.5"/>
+          <path d="M 6.4 31 A 18 18 0 1 1 37.6 31" fill="none" stroke="#1a2a44" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M 6.4 31 A 18 18 0 0 1 25 4" fill="none" stroke="#0d6efd" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="24" y2="9" stroke="#ff4433" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="21" y2="26" stroke="#cc2211" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="22" cy="22" r="2.5" fill="#ccddff" stroke="#fff" stroke-width="0.5"/>
+          <text x="22" y="37" text-anchor="middle" font-size="5" fill="#6688bb" font-family="sans-serif" font-weight="bold" letter-spacing="0.8">PSI</text>
+        </svg>
+        <div>
+          <div class="ag-brand">PRESSURE<span>SENSE</span></div>
+        </div>
+      </div>
+      <nav class="ag-nav">
+        <a href="index.html" class="active">CHART</a>
+        <a href="schedule.html">SCHEDULE</a>
+        <a href="map.html">MAP</a>
+        <a href="#" id="logout-link">SIGN OUT</a>
+      </nav>
+    </header>
+
+    <div class="ag-status-bar">
+      <div class="ag-status-dot"></div>
+      <div class="ag-status-item">SYSTEM <span class="val" id="system-status">CONNECTING</span></div>
+      <span class="ag-status-sep">|</span>
+      <div class="ag-status-item">LOCATION <span class="val" id="loc-display">—</span></div>
+      <span class="ag-status-sep">|</span>
+      <div class="ag-status-item">LAST READ <span class="val" id="last-read">—</span></div>
+      <span class="ag-status-sep">|</span>
+      <div class="ag-status-item">SAMPLE RATE <span class="val" id="sample-rate-display">—</span></div>
+    </div>
+
+    <div class="ag-body">
+
+      <div id="toast" class="ag-toast hidden">
+        <span class="ag-toast-icon">&#10003;</span>
+        <span id="toast-msg">Done.</span>
+      </div>
+
+      <div class="ag-dashboard-grid">
+
+        <div class="ag-left">
+
+          <div class="ag-gauge-card">
+            <div class="ag-card-label">LIVE PRESSURE (PSI)</div>
+            <svg class="ag-gauge-svg" width="140" height="80" viewBox="0 0 140 80"
+                 role="img" aria-label="Circular pressure gauge showing current PSI">
+              <defs>
+                <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#22c55e"/>
+                  <stop offset="60%" stop-color="#0d6efd"/>
+                  <stop offset="100%" stop-color="#ef4444"/>
+                </linearGradient>
+              </defs>
+              <path d="M 20 80 A 50 50 0 1 1 120 80" fill="none" stroke="#1e2d3d"
+                    stroke-width="8" stroke-linecap="round"/>
+              <path id="gauge-arc" d="M 20 80 A 50 50 0 1 1 120 80" fill="none"
+                    stroke="url(#gaugeGrad)" stroke-width="8" stroke-linecap="round"
+                    stroke-dasharray="157" stroke-dashoffset="157"/>
+              <text id="gauge-val" x="70" y="72" text-anchor="middle"
+                    font-family="'Share Tech Mono', monospace" font-size="22" fill="#e8f4fd">—</text>
+              <text x="15" y="88" text-anchor="middle"
+                    font-family="'Share Tech Mono', monospace" font-size="8" fill="#3d5a73">0</text>
+              <text x="125" y="88" text-anchor="middle"
+                    font-family="'Share Tech Mono', monospace" font-size="8" fill="#3d5a73">100</text>
+            </svg>
+          </div>
+
+          <div class="ag-stat-grid">
+            <div class="ag-stat">
+              <div class="ag-stat-label">ZONE TARGET PSI</div>
+              <div class="ag-stat-value" id="stat-avgpsi">—</div>
+            </div>
+            <div class="ag-stat">
+              <div class="ag-stat-label">ZONE STATUS</div>
+              <div class="ag-stat-value ok" id="stat-status">—</div>
+            </div>
+            <div class="ag-stat">
+              <div class="ag-stat-label">RUNTIME</div>
+              <div class="ag-stat-value" id="stat-runtime">—</div>
+            </div>
+            <div class="ag-stat">
+              <div class="ag-stat-label">ZONE TIME REMAINING</div>
+              <div class="ag-stat-value" id="stat-zone-remaining">—</div>
+            </div>
+          </div>
+
+          <div class="ag-zone-card">
+            <div class="ag-card-label" id="zone-card-label">SCHEDULED ACTIVE ZONE</div>
+            <div class="ag-zone-name" id="current-zone-name">—</div>
+            <div class="ag-zone-meta">
+              <span id="current-zone-number">—</span> · <span id="current-zone-controller">—</span><br>
+              START <span id="current-zone-start">—</span> · RUN <span id="current-zone-run">—</span>m<br>
+              DAYS <span id="current-zone-days">—</span>
+            </div>
+            <button id="schedules-toggle-btn" class="ag-btn ag-btn-danger ag-btn-sm" style="width:100%; margin-top:10px;">STOP SCHEDULES</button>
+          </div>
+
+          <div class="ag-sidebar-summary">
+            <div class="ag-stat ag-stat-wide">
+              <div class="ag-stat-label">MANUAL CONTROL</div>
+              <div class="ag-program-row">
+                <select id="program-controller-select" class="ag-select">
+                  <option value="Yard">Yard</option>
+                  <option value="Field">Field</option>
+                </select>
+                <select id="program-letter-select" class="ag-select">
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                </select>
+              </div>
+              <div class="ag-program-row">
+                <button id="start-manual-program-btn" class="ag-btn ag-btn-primary ag-btn-sm">START PROGRAM</button>
+                <button id="stop-manual-program-btn" class="ag-btn ag-btn-danger ag-btn-sm">STOP</button>
+              </div>
+              <div id="manual-program-status" class="ag-manual-state muted">READY</div>
+
+              <div class="ag-divider"></div>
+
+              <div class="ag-manual-zone-row" data-row="1">
+                <div class="ag-zone-row">
+                  <select class="ag-select manual-zone-select"></select>
+                  <select class="ag-select manual-zone-run">
+                    <option value="1">1m</option>
+                    <option value="5">5m</option>
+                    <option value="10">10m</option>
+                    <option value="15">15m</option>
+                    <option value="20">20m</option>
+                    <option value="30">30m</option>
+                    <option value="45">45m</option>
+                    <option value="60">60m</option>
+                  </select>
+                  <button class="ag-btn ag-btn-primary ag-btn-sm manual-zone-start-btn">START</button>
+                  <button class="ag-btn ag-btn-danger ag-btn-sm manual-zone-stop-btn">STOP</button>
+                </div>
+                <div class="ag-manual-state muted manual-zone-status">READY</div>
+              </div>
+
+              <div class="ag-manual-zone-row" data-row="2">
+                <div class="ag-zone-row">
+                  <select class="ag-select manual-zone-select"></select>
+                  <select class="ag-select manual-zone-run">
+                    <option value="1">1m</option>
+                    <option value="5">5m</option>
+                    <option value="10">10m</option>
+                    <option value="15">15m</option>
+                    <option value="20">20m</option>
+                    <option value="30">30m</option>
+                    <option value="45">45m</option>
+                    <option value="60">60m</option>
+                  </select>
+                  <button class="ag-btn ag-btn-primary ag-btn-sm manual-zone-start-btn">START</button>
+                  <button class="ag-btn ag-btn-danger ag-btn-sm manual-zone-stop-btn">STOP</button>
+                </div>
+                <div class="ag-manual-state muted manual-zone-status">READY</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="ag-right">
+
+          <div class="ag-chart-card">
+            <div class="ag-chart-header">
+              <div class="ag-chart-title">PRESSURE HISTORY</div>
+              <div class="ag-range-btns">
+                <button class="ag-range-btn active" data-range="today">LIVE</button>
+              </div>
+            </div>
+            <div class="ag-rotate-hint">&#8635; ROTATE DEVICE FOR BEST CHART VIEW</div>
+            <div id="chart-pressure" class="ag-chart-plot"></div>
+            <div class="ag-chart-legend">
+              <span class="ag-legend-item"><span class="ag-legend-swatch" style="background:#0d6efd;"></span>PRESSURE</span>
+              <span class="ag-legend-item"><span class="ag-legend-swatch" style="background:#f59e0b; width:8px; height:8px; border-radius:50%;"></span>WARN</span>
+              <span class="ag-legend-item"><span class="ag-legend-swatch" style="background:#ef4444; width:8px; height:8px; border-radius:50%;"></span>ALERT</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <footer class="ag-footer">
+      <div class="ag-footer-right">
+        <span>ADC: <span id="footer-adc-voltage" style="color:#f59e0b;">—</span></span>
+        <span>LINK: <span id="footer-link" style="color:#22c55e;">—</span></span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="zone-utils.js" defer></script>
+  <script src="dashboard.js" defer></script>
+</body>
+</html>

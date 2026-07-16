@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PressureSense — Schedule</title>
+  <meta content="noindex, nofollow" name="robots" />
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600&family=Barlow+Condensed:wght@500;700&display=swap" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="ag-page">
+
+  <div class="ag-rotate-block">
+    <div class="ag-rotate-block-icon">&#8635;</div>
+    <div class="ag-rotate-block-text">Rotate your device to landscape to edit the schedule</div>
+  </div>
+
+  <div class="ag-root">
+
+    <header class="ag-header">
+      <div class="ag-logo">
+        <svg class="ag-logo-mark" width="44" height="44" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="gf" cx="40%" cy="40%" r="60%">
+              <stop offset="0%" stop-color="#1e2f50"/>
+              <stop offset="100%" stop-color="#080f1f"/>
+            </radialGradient>
+          </defs>
+          <circle cx="22" cy="22" r="21" fill="url(#gf)" stroke="#1a5fcc" stroke-width="1.5"/>
+          <path d="M 6.4 31 A 18 18 0 1 1 37.6 31" fill="none" stroke="#1a2a44" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M 6.4 31 A 18 18 0 0 1 25 4" fill="none" stroke="#0d6efd" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="22" y1="22" x2="24" y2="9" stroke="#ff4433" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="22" cy="22" r="2.5" fill="#ccddff" stroke="#fff" stroke-width="0.5"/>
+          <text x="22" y="37" text-anchor="middle" font-size="5" fill="#6688bb" font-family="sans-serif" font-weight="bold" letter-spacing="0.8">PSI</text>
+        </svg>
+        <div>
+          <div class="ag-brand">PRESSURE<span>SENSE</span></div>
+        </div>
+      </div>
+      <nav class="ag-nav">
+        <a href="index.html">CHART</a>
+        <a href="schedule.html" class="active">SCHEDULE</a>
+        <a href="map.html">MAP</a>
+        <a href="#" id="logout-link">SIGN OUT</a>
+      </nav>
+    </header>
+
+    <div class="ag-status-bar">
+      <div class="ag-status-dot"></div>
+      <div class="ag-status-item">SYSTEM <span class="val" id="system-status">CONNECTING</span></div>
+      <span class="ag-status-sep">|</span>
+      <div class="ag-status-item">ZONES LOADED <span class="val" id="zone-count">—</span></div>
+      <span class="ag-status-sep">|</span>
+      <div class="ag-status-item">UNSAVED CHANGES <span class="val" id="unsaved-indicator">NONE</span></div>
+    </div>
+
+    <div class="ag-body">
+
+      <div id="toast" class="ag-toast hidden">
+        <span class="ag-toast-icon">&#10003;</span>
+        <span id="toast-msg">Saved.</span>
+      </div>
+
+      <div class="ag-section">
+        <div class="ag-section-header">
+          <div class="ag-section-title">&#9776; Schedule — Run Times, Start &amp; Days</div>
+          <div class="ag-toolbar">
+            <button class="ag-btn ag-btn-ghost ag-btn-sm" id="reload-btn">&#8635; Reload</button>
+            <button class="ag-btn ag-btn-primary ag-btn-sm" id="save-btn">&#128190; Save Schedule</button>
+          </div>
+        </div>
+        <div class="ag-section-body" style="padding:0;">
+          <div class="ag-table-toolbar">
+            <span class="ag-help-text">Editing here is limited to run times, program start times, and watering days. Zone names, targets, add/delete, calibration, and weather settings stay are edited on the local unit.</span>
+          </div>
+          <div id="schedule-controllers" class="ag-config-controllers"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <footer class="ag-footer">
+      <div class="ag-footer-right">
+        <span>LINK: <span id="footer-link" style="color:#22c55e;">—</span></span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="zone-utils.js" defer></script>
+  <script src="schedule.js" defer></script>
+</body>
+</html>
