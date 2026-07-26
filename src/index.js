@@ -214,7 +214,11 @@ export class PressureSenseRelay {
           } catch (_) {}
           return;
         }
-        if (this.device) { try { this.device.send(evt.data); } catch (_) {} }
+        if (this.device) {
+          try { this.device.send(evt.data); } catch (_) {}
+        } else if (cmd && cmd.cmd) {
+          try { server.send(JSON.stringify({ type: "error", cmd: cmd.cmd, reason: "device-offline" })); } catch (_) {}
+        }
       });
       server.addEventListener("close", () => { this.browsers.delete(server); });
       server.addEventListener("error", () => { this.browsers.delete(server); });

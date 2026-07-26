@@ -49,6 +49,7 @@ let reconnectTimer = null;
 let scheduleLoaded = false;
 let schedulesEnabledLoaded = false;
 let initialSyncTimer = null;
+let deviceOfflineNoticeShown = false; // dedupe the offline toast across retries
 
 // ---------- small UI helpers ----------
 function showToast(msg, isError = false) {
@@ -418,6 +419,7 @@ function connect() {
 
   ws.addEventListener('open', () => {
     setLink(true);
+    deviceOfflineNoticeShown = false;
     // Chart history is answered directly by the Worker/DO (not dependent on
     // the Indoor/Master link), so unlike getSchedule it can't be silently
     // dropped -- no retry needed.
@@ -501,6 +503,15 @@ function connect() {
       case 'manualZoneAck':
       case 'manualProgramAck':
         showToast(m.message || (m.success ? 'Done' : 'Failed'), !m.success);
+        break;
+      case 'error':
+        // Indoor unit's own link to the relay is down. Keep retrying
+        // (initialSyncTimer / manual actions may still succeed once it's
+        // back), just make the failure visible instead of silent.
+        if ((m.cmd === 'getSchedule' || m.cmd === 'getSchedulesEnabled') && !deviceOfflineNoticeShown) {
+          deviceOfflineNoticeShown = true;
+          showToast('Indoor unit not connected — zone list unavailable', true);
+        }
         break;
       default:
         break; // ignore unknown types

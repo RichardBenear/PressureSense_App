@@ -95,7 +95,9 @@ body.ag-page::before {
   text-decoration: none;
   transition: all 0.2s ease;
   position: relative;
+  white-space: nowrap;
 }
+.ag-nav-short { display: none; }
 .ag-nav a.active { 
   background: linear-gradient(135deg, #0d6efd 0%, #0052cc 100%);
   color: white;
@@ -1261,6 +1263,18 @@ body.ag-page::before {
   .ag-map-stat { padding: 8px 10px; }
   .ag-map-stat strong { font-size: 18px; }
   .ag-map-stage { min-height: 420px; }
+}
+
+/* ── Mobile ≤ 350px (e.g. iPhone 12 mini portrait) ────────── */
+@media (max-width: 350px) {
+  .ag-header { padding: 8px 10px; }
+  .ag-logo { gap: 4px; }
+  .ag-logo-mark { width: 30px; height: 30px; }
+  .ag-brand { font-size: 12px; }
+  .ag-nav { gap: 1px; }
+  .ag-nav a { padding: 5px 4px; font-size: 9px; letter-spacing: 0.2px; }
+  .ag-nav-full { display: none; }
+  .ag-nav-short { display: inline; }
 }
 
 /* ── Rotate hint — chart page portrait phones ─────────────── */

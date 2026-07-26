@@ -15,6 +15,10 @@ let ws = null;
 let controllers = [];       // working copy (edited in place)
 let dirty = false;
 let reconnectTimer = null;
+let scheduleLoaded = false;
+let scheduleRetryTimer = null;
+let scheduleRetryCount = 0;
+const SCHEDULE_RETRY_LIMIT = 5; // ~15s of retries at 3s each
 
 // ---------- helpers ----------
 function escapeHtml(s) {
@@ -92,7 +96,7 @@ function renderProgramHeader(controller, program) {
                data-controller="${controller.id}" data-program="${program.id}" style="width:110px;">
       </label>
       <span class="ag-program-days">${editableDayPips(controller.id, program.id, program.days)}</span>
-      <span class="ag-program-zonecount">${program.zones.length} zones</span>
+      <span class="ag-program-zonecount">${(program.zones || []).length} zones</span>
       <span class="ag-program-duration">${interval.totalRun} min total</span>
       <span class="ag-program-endtime">ends ${endTime}${crossesMidnight ? ' <span class="ag-day-badge">+1</span>' : ''}</span>
       ${overlapHtml}
@@ -115,7 +119,7 @@ function renderZoneRow(controllerId, program, zone, idx) {
 }
 
 function renderProgram(controller, program) {
-  const rows = program.zones.map((z, i) => renderZoneRow(controller.id, program, z, i)).join('');
+  const rows = (program.zones || []).map((z, i) => renderZoneRow(controller.id, program, z, i)).join('');
   return `
     <div class="ag-program-group ${ctrlBadgeClass(controller.id)}" data-controller="${controller.id}" data-program="${program.id}">
       ${renderProgramHeader(controller, program)}
@@ -197,16 +201,43 @@ function wsSend(obj) {
   else showToast('Not connected', true);
 }
 
+// The relay is a blind fan-out with no queuing, so a one-shot getSchedule can
+// be silently lost if the Indoor unit's own link happens to be down at this
+// exact instant -- retry until it lands, matching dashboard.js's approach.
+function requestSchedule() {
+  scheduleLoaded = false;
+  scheduleRetryCount = 0;
+  wsSend({ cmd: 'getSchedule' });
+  if (scheduleRetryTimer) clearInterval(scheduleRetryTimer);
+  scheduleRetryTimer = setInterval(() => {
+    if (scheduleLoaded) {
+      clearInterval(scheduleRetryTimer);
+      scheduleRetryTimer = null;
+      return;
+    }
+    scheduleRetryCount++;
+    if (scheduleRetryCount >= SCHEDULE_RETRY_LIMIT) {
+      clearInterval(scheduleRetryTimer);
+      scheduleRetryTimer = null;
+      showToast('No response from controller — check Indoor unit connection', true);
+      return;
+    }
+    wsSend({ cmd: 'getSchedule' });
+  }, 3000);
+}
+
 function connect() {
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
   ws = new WebSocket(proto + '//' + location.host + '/ws');
 
-  ws.addEventListener('open', () => { setLink(true); wsSend({ cmd: 'getSchedule' }); });
+  ws.addEventListener('open', () => { setLink(true); requestSchedule(); });
 
   ws.addEventListener('message', ev => {
     let m; try { m = JSON.parse(ev.data); } catch (_) { return; }
     switch (m.type) {
       case 'schedule':
+        scheduleLoaded = true;
+        if (scheduleRetryTimer) { clearInterval(scheduleRetryTimer); scheduleRetryTimer = null; }
         // Don't clobber unsaved edits if a stray schedule message arrives.
         if (!dirty) {
           controllers = Array.isArray(m.controllers) ? m.controllers : [];
@@ -217,6 +248,12 @@ function connect() {
         if (m.cmd === 'saveSchedule') {
           showToast(m.message || (m.success ? 'Schedule saved' : 'Save failed'), !m.success);
           if (m.success) setDirty(false);
+        }
+        break;
+      case 'error':
+        if (m.cmd === 'getSchedule') {
+          if (scheduleRetryTimer) { clearInterval(scheduleRetryTimer); scheduleRetryTimer = null; }
+          showToast('Indoor unit not connected — schedule unavailable', true);
         }
         break;
       default:
@@ -243,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('reload-btn').addEventListener('click', () => {
     if (dirty && !confirm('Discard unsaved changes and reload from the controller?')) return;
     setDirty(false);
-    wsSend({ cmd: 'getSchedule' });
+    requestSchedule();
   });
 
   document.getElementById('save-btn').addEventListener('click', () => {
