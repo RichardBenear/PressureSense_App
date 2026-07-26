@@ -17,6 +17,11 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    // ---- Relay subdomain: device traffic only, nothing else public ----
+    if (url.hostname === "relay.pressure-sense.app" && url.pathname !== "/device") {
+      return new Response("Not found", { status: 404 });
+    }
+
     // ---- Device socket: RELAY_TOKEN bearer header ----
     if (url.pathname === "/device") {
       const auth = request.headers.get("Authorization") || "";
