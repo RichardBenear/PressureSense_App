@@ -1,3 +1,8 @@
+# Full-resolution photo originals (source for public/photos/ -- see
+# public/photos.js for the resize workflow). Only the optimized copies
+# under public/ get committed/deployed.
+/photos/
+
 # Logs
 
 logs

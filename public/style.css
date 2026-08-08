@@ -1029,6 +1029,39 @@ body.ag-page::before {
   font-weight: 500;
 }
 
+/* ── Photo gallery ────────────────────────────────────────── */
+/* auto-fill + a 240px minimum naturally collapses to one column on phone
+   widths (no separate mobile breakpoint needed) and fills out to 2-4+ on
+   wider screens. */
+.ag-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+.ag-photo-card {
+  background: #0f1419;
+  border: 1px solid #2a3f54;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.ag-photo-img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+  background: #08111d;
+}
+.ag-photo-desc {
+  padding: 10px 12px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: #8ab0ca;
+  line-height: 1.5;
+}
+
 /* ── Toast ────────────────────────────────────────────────── */
 .ag-toast {
   position: fixed;
