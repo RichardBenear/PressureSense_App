@@ -127,11 +127,26 @@ function findDisplayManualRun() {
   return null;
 }
 
+// Wx Adj / Deficit sub-line under the Runtime stat. weatherAutoAdjustEnabled/
+// weatherAdjustPct/deficitMm now ride along on sensorUpdate and
+// manualZoneStatus directly (Master's buildSensorUpdateJson()/
+// buildManualZoneRunsJson()) -- no separate weather fetch needed here.
+// Only shown when auto-adjust is globally on AND this run's minutes were
+// actually derived from it: scheduled zones and manual PROGRAM runs, not
+// manual ZONE runs (which use exactly the minutes picked, bypassing weather
+// adjustment entirely -- see Master's startManualZoneRun()).
+function formatWxAdjText(pct, deficitMm) {
+  return 'Wx Adj ' + Math.round(Number(pct) || 0) + '%\nDeficit ' + (Number(deficitMm) || 0).toFixed(1) + ' mm';
+}
+
 function updateRuntimeStats() {
+  const wxEl = document.getElementById('stat-runtime-wx');
   const run = findDisplayManualRun();
   if (run) {
     document.getElementById('stat-runtime').textContent = Number(run.totalRunMinutes) > 0 ? run.totalRunMinutes + 'm' : '—';
     document.getElementById('stat-zone-remaining').textContent = formatRemaining(run.remainingSec);
+    if (wxEl) wxEl.textContent = (run.program && latestScheduledZone.weatherAutoAdjustEnabled)
+      ? formatWxAdjText(run.weatherAdjustPct, run.deficitMm) : '';
     return;
   }
   const z = latestScheduledZone;
@@ -139,6 +154,8 @@ function updateRuntimeStats() {
   const active = Boolean(z.zoneNumber) && String(z.controller || '').toUpperCase() !== 'OFF';
   document.getElementById('stat-runtime').textContent = active && Number(z.run) > 0 ? z.run + 'm' : '—';
   document.getElementById('stat-zone-remaining').textContent = active ? (z.remaining || '—') : '—';
+  if (wxEl) wxEl.textContent = (active && z.weatherAutoAdjustEnabled)
+    ? formatWxAdjText(z.weatherAdjustPct, z.deficitMm) : '';
 }
 
 function updateZoneCard(s) {

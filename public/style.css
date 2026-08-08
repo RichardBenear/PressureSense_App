@@ -246,6 +246,15 @@ body.ag-page::before {
 .ag-stat-value.warn { color: #f59e0b; }
 .ag-stat-value.err  { color: #ef4444; }
 .ag-stat-unit { font-size: 11px; color: #8ab0ca; font-weight: 500; }
+.ag-stat-wx-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: #8ab0ca;
+  margin-top: 3px;
+  min-height: 24px;
+  white-space: pre-line;
+  line-height: 1.4;
+}
 
 /* ── Zone card ────────────────────────────────────────────── */
 .ag-zone-card {
