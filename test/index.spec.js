@@ -1,26 +1,196 @@
-import {
-	env,
-	createExecutionContext,
-	waitOnExecutionContext,
-	SELF,
-} from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
 import { describe, it, expect } from "vitest";
-import worker from "../src";
 
-describe("Hello World worker", () => {
-	it("responds with Hello World! (unit style)", async () => {
-		const request = new Request("http://example.com");
-		// Create an empty context to pass to `worker.fetch()`.
-		const ctx = createExecutionContext();
-		const response = await worker.fetch(request, env, ctx);
-		// Wait for all `Promise`s passed to `ctx.waitUntil()` to settle before running test assertions
-		await waitOnExecutionContext(ctx);
-		expect(await response.text()).toMatchInlineSnapshot(`"Hello World!"`);
+// NOTE: on some local setups, any test below that opens a real WebSocket
+// against the RELAY Durable Object (device or browser socket) can fail
+// isolated-storage teardown with "Failed to pop isolated storage stack
+// frame" / EBUSY, even in tests unrelated to this file's changes. That's a
+// pre-existing environment issue (workerd/miniflare version mismatch with
+// wrangler.jsonc's compatibility_date -- watch for the "Falling back to
+// <date>" warning in the test runner's output) and not something these
+// tests do wrong; if it happens locally, verify in CI or with an updated
+// @cloudflare/vitest-pool-workers / workerd instead of chasing it here.
+
+async function login(password = "test-password") {
+	const res = await SELF.fetch("http://example.com/login", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ password }),
+	});
+	const setCookie = res.headers.get("Set-Cookie") || "";
+	const cookie = setCookie.split(";")[0]; // "ps_session=<token>"
+	return { res, cookie };
+}
+
+describe("public pages", () => {
+	it("serves / with no session cookie", async () => {
+		const res = await SELF.fetch("http://example.com/");
+		expect(res.status).toBe(200);
+		expect(await res.text()).toContain("<title>PressureSense — Remote</title>");
 	});
 
-	it("responds with Hello World! (integration style)", async () => {
-		const response = await SELF.fetch("http://example.com");
-		expect(await response.text()).toMatchInlineSnapshot(`"Hello World!"`);
+	// /ws's own cookie gate was removed (see src/index.js) -- the
+	// "PressureSenseRelay /ws allow-list" tests below connect straight to the
+	// Durable Object and prove a browser socket needs no cookie to read, and
+	// can't mutate anything regardless.
+});
+
+describe("POST /api/command", () => {
+	it("rejects with 401 when no session cookie is present", async () => {
+		const res = await SELF.fetch("http://example.com/api/command", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ cmd: "manualZone", action: "start" }),
+		});
+		expect(res.status).toBe(401);
+	});
+
+	it("rejects with 401 when the session cookie is invalid", async () => {
+		const res = await SELF.fetch("http://example.com/api/command", {
+			method: "POST",
+			headers: { "Content-Type": "application/json", Cookie: "ps_session=bogus.sig" },
+			body: JSON.stringify({ cmd: "manualZone", action: "start" }),
+		});
+		expect(res.status).toBe(401);
+	});
+
+	it("rejects a non-allow-listed cmd even with a valid cookie", async () => {
+		const { cookie } = await login();
+		const res = await SELF.fetch("http://example.com/api/command", {
+			method: "POST",
+			headers: { "Content-Type": "application/json", Cookie: cookie },
+			body: JSON.stringify({ cmd: "getHistory" }),
+		});
+		expect(res.status).toBe(400);
+	});
+
+	it("returns 503 when the device is offline", async () => {
+		const { cookie } = await login();
+		const res = await SELF.fetch("http://example.com/api/command", {
+			method: "POST",
+			headers: { "Content-Type": "application/json", Cookie: cookie },
+			body: JSON.stringify({ cmd: "manualZone", action: "start", controller: "yard", znumber: "1", run: "5" }),
+		});
+		expect(res.status).toBe(503);
+	});
+
+	it("forwards an allow-listed cmd to the device when the cookie is valid", async () => {
+		const id = env.RELAY.idFromName("singleton");
+		const stub = env.RELAY.get(id);
+		const deviceRes = await stub.fetch(new Request("http://x/device", { headers: { Upgrade: "websocket" } }));
+		const deviceWs = deviceRes.webSocket;
+		deviceWs.accept();
+
+		let received = null;
+		deviceWs.addEventListener("message", (evt) => { received = JSON.parse(evt.data); });
+
+		const { cookie } = await login();
+		const res = await SELF.fetch("http://example.com/api/command", {
+			method: "POST",
+			headers: { "Content-Type": "application/json", Cookie: cookie },
+			body: JSON.stringify({ cmd: "manualZone", action: "start", controller: "yard", znumber: "1", run: "5" }),
+		});
+
+		expect(res.status).toBe(200);
+		await new Promise((r) => setTimeout(r, 20));
+		expect(received).toMatchObject({ cmd: "manualZone", action: "start" });
+
+		deviceWs.close();
+		await new Promise((r) => setTimeout(r, 20));
+	});
+});
+
+describe("PressureSenseRelay forwardCommand RPC", () => {
+	it("rejects a non-gated cmd", async () => {
+		const id = env.RELAY.idFromName("test-forward-badcmd-" + Math.random());
+		const stub = env.RELAY.get(id);
+		const result = await stub.forwardCommand({ cmd: "getSchedule" });
+		expect(result).toEqual({ ok: false, reason: "bad-command" });
+	});
+
+	it("reports device-offline when no device is connected", async () => {
+		const id = env.RELAY.idFromName("test-forward-offline-" + Math.random());
+		const stub = env.RELAY.get(id);
+		const result = await stub.forwardCommand({ cmd: "saveSchedule", controllers: [] });
+		expect(result).toEqual({ ok: false, reason: "device-offline" });
+	});
+
+	it("forwards to a connected device", async () => {
+		const id = env.RELAY.idFromName("test-forward-ok-" + Math.random());
+		const stub = env.RELAY.get(id);
+		const deviceRes = await stub.fetch(new Request("http://x/device", { headers: { Upgrade: "websocket" } }));
+		const deviceWs = deviceRes.webSocket;
+		deviceWs.accept();
+
+		let received = null;
+		deviceWs.addEventListener("message", (evt) => { received = JSON.parse(evt.data); });
+
+		const result = await stub.forwardCommand({ cmd: "setSchedulesEnabled", enabled: false });
+		expect(result).toEqual({ ok: true });
+		await new Promise((r) => setTimeout(r, 20));
+		expect(received).toEqual({ cmd: "setSchedulesEnabled", enabled: false });
+
+		deviceWs.close();
+		await new Promise((r) => setTimeout(r, 20));
+	});
+});
+
+describe("PressureSenseRelay /ws allow-list", () => {
+	it("does not forward a mutating cmd sent directly over /ws, and tells the browser why", async () => {
+		const id = env.RELAY.idFromName("test-ws-allowlist-" + Math.random());
+		const stub = env.RELAY.get(id);
+
+		const deviceRes = await stub.fetch(new Request("http://x/device", { headers: { Upgrade: "websocket" } }));
+		const deviceWs = deviceRes.webSocket;
+		deviceWs.accept();
+
+		const browserRes = await stub.fetch(new Request("http://x/ws", { headers: { Upgrade: "websocket" } }));
+		const browserWs = browserRes.webSocket;
+		browserWs.accept();
+
+		let deviceReceived = false;
+		deviceWs.addEventListener("message", () => { deviceReceived = true; });
+
+		let errorMsg = null;
+		browserWs.addEventListener("message", (evt) => {
+			const m = JSON.parse(evt.data);
+			if (m.type === "error") errorMsg = m;
+		});
+
+		browserWs.send(JSON.stringify({ cmd: "manualZone", action: "start", controller: "yard", znumber: "1" }));
+		await new Promise((r) => setTimeout(r, 50));
+
+		expect(deviceReceived).toBe(false);
+		expect(errorMsg).toEqual({ type: "error", cmd: "manualZone", reason: "not-allowed-via-ws" });
+
+		deviceWs.close();
+		browserWs.close();
+		await new Promise((r) => setTimeout(r, 20));
+	});
+
+	it("still forwards getSchedule to the device over /ws (read-only, no cookie needed)", async () => {
+		const id = env.RELAY.idFromName("test-ws-allowlist-read-" + Math.random());
+		const stub = env.RELAY.get(id);
+
+		const deviceRes = await stub.fetch(new Request("http://x/device", { headers: { Upgrade: "websocket" } }));
+		const deviceWs = deviceRes.webSocket;
+		deviceWs.accept();
+
+		const browserRes = await stub.fetch(new Request("http://x/ws", { headers: { Upgrade: "websocket" } }));
+		const browserWs = browserRes.webSocket;
+		browserWs.accept();
+
+		let received = null;
+		deviceWs.addEventListener("message", (evt) => { received = JSON.parse(evt.data); });
+
+		browserWs.send(JSON.stringify({ cmd: "getSchedule" }));
+		await new Promise((r) => setTimeout(r, 50));
+
+		expect(received).toEqual({ cmd: "getSchedule" });
+
+		deviceWs.close();
+		browserWs.close();
+		await new Promise((r) => setTimeout(r, 20));
 	});
 });
 

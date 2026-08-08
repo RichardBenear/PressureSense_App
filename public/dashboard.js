@@ -324,7 +324,10 @@ function initChart() {
   chart = Highcharts.chart('chart-pressure', {
     chart: {
       type: 'line', backgroundColor: 'transparent', animation: false, height: 340,
-      zooming: { type: 'x' }, panning: true, panKey: 'shift'
+      zooming: { type: 'x' }, panning: true, panKey: 'shift',
+      // Default position overlaps the dashed manual-start marker lines near
+      // the top of the plot; nudged down 20px clear of them.
+      resetZoomButton: { position: { align: 'right', x: -10, y: 30 } }
     },
     title: { text: null }, credits: { enabled: false }, legend: { enabled: false },
     accessibility: { enabled: false },
@@ -456,8 +459,9 @@ function connect() {
           trackZoneTransition(m);
           const xAxis = chart.xAxis[0];
           const zoomed = xAxis.userMin != null || xAxis.userMax != null;
-          const zoomMin = xAxis.min, zoomMax = xAxis.max;
-          chart.series[0].addPoint(makePoint(Date.now(), m.psi, Number(m.zoneAvgPsi)),
+          const zoomWidth = xAxis.max - xAxis.min;
+          const now = Date.now();
+          chart.series[0].addPoint(makePoint(now, m.psi, Number(m.zoneAvgPsi)),
             true, chart.series[0].data.length >= MAX_CHART_POINTS, false);
           // Highcharts quirk (documented on their own forums): addPoint's
           // shift silently desyncs the shifted series data from a
@@ -465,10 +469,13 @@ function connect() {
           // new points until some other interaction forces a redraw --
           // matches Master's chart never hitting this, since it never
           // shifts (unbounded day + scrollablePlotArea instead of a
-          // rolling buffer). Re-asserting the same zoomed extremes after
-          // every point forces Highcharts to recompute and redraw within
-          // that range each time.
-          if (zoomed) xAxis.setExtremes(zoomMin, zoomMax, true, false);
+          // rolling buffer). Re-asserting extremes after every point forces
+          // Highcharts to recompute and redraw within that range each time.
+          // Sliding the window to end at `now` (instead of re-pinning the
+          // exact old min/max) keeps a zoomed-in view following live data --
+          // otherwise the window stays frozen at whatever was zoomed and new
+          // points, always newer than the old max, never become visible.
+          if (zoomed) xAxis.setExtremes(now - zoomWidth, now, true, false);
         }
         break;
       }
@@ -521,8 +528,8 @@ function connect() {
   ws.addEventListener('close', () => {
     setLink(false);
     if (initialSyncTimer) { clearInterval(initialSyncTimer); initialSyncTimer = null; }
-    // Auto-reconnect. If the session expired, the /ws upgrade will 401 and the
-    // socket closes immediately; after a couple of failures, bounce to login.
+    // Auto-reconnect -- /ws is public now, so a dropped connection is just a
+    // network blip, never an auth failure.
     if (reconnectTimer) clearTimeout(reconnectTimer);
     reconnectTimer = setTimeout(connect, 3000);
   });
@@ -545,14 +552,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initChart();
   connect();
 
-  document.getElementById('logout-link').addEventListener('click', async (e) => {
-    e.preventDefault();
-    try { await fetch('/logout', { method: 'POST' }); } catch (_) {}
-    window.location.href = '/login.html';
-  });
-
   document.getElementById('schedules-toggle-btn').addEventListener('click', () => {
-    wsSend({ cmd: 'setSchedulesEnabled', enabled: !schedulesEnabled });
+    sendGatedCommand({ cmd: 'setSchedulesEnabled', enabled: !schedulesEnabled })
+      .catch(err => { if (err.message !== 'cancelled') showToast(err.message || 'Failed', true); });
   });
 
   document.getElementById('program-controller-select').addEventListener('change', () => { populateManualZoneSelects(); renderManualStatus(); });
@@ -560,16 +562,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('start-manual-program-btn').addEventListener('click', (e) => {
     const controller = document.getElementById('program-controller-select').value;
-    if (e.currentTarget.dataset.mode === 'next') {
-      wsSend({ cmd: 'manualProgram', action: 'next', controller });
-    } else {
-      wsSend({ cmd: 'manualProgram', action: 'start', controller,
-        program: document.getElementById('program-letter-select').value });
-    }
+    const cmd = e.currentTarget.dataset.mode === 'next'
+      ? { cmd: 'manualProgram', action: 'next', controller }
+      : { cmd: 'manualProgram', action: 'start', controller,
+          program: document.getElementById('program-letter-select').value };
+    sendGatedCommand(cmd)
+      .catch(err => { if (err.message !== 'cancelled') showToast(err.message || 'Failed', true); });
   });
   document.getElementById('stop-manual-program-btn').addEventListener('click', () => {
-    wsSend({ cmd: 'manualProgram', action: 'stop',
-      controller: document.getElementById('program-controller-select').value });
+    sendGatedCommand({ cmd: 'manualProgram', action: 'stop',
+      controller: document.getElementById('program-controller-select').value })
+      .catch(err => { if (err.message !== 'cancelled') showToast(err.message || 'Failed', true); });
   });
 
   document.querySelectorAll('.ag-manual-zone-row').forEach(rowEl => {
@@ -579,13 +582,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const znumber = rowEl.querySelector('.manual-zone-select').value;
       const run = rowEl.querySelector('.manual-zone-run').value;
       if (!znumber) { showToast('Pick a zone first', true); return; }
-      wsSend({ cmd: 'manualZone', action: 'start', controller, znumber, run });
+      sendGatedCommand({ cmd: 'manualZone', action: 'start', controller, znumber, run })
+        .catch(err => { if (err.message !== 'cancelled') showToast(err.message || 'Failed', true); });
     });
     rowEl.querySelector('.manual-zone-stop-btn').addEventListener('click', () => {
       const controller = document.getElementById('program-controller-select').value;
       const znumber = rowEl.querySelector('.manual-zone-select').value;
       if (!znumber) { showToast('Pick a zone first', true); return; }
-      wsSend({ cmd: 'manualZone', action: 'stop', controller, znumber });
+      sendGatedCommand({ cmd: 'manualZone', action: 'stop', controller, znumber })
+        .catch(err => { if (err.message !== 'cancelled') showToast(err.message || 'Failed', true); });
     });
   });
 

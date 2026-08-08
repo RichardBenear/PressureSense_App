@@ -1,17 +1,34 @@
 // PressureSense App Worker.
 //
 // Endpoints:
-//   GET  /            — dashboard (redirects to /login.html if no session)
+//   GET  /            — dashboard, public, no session required
+//   GET  /ws          — browser live socket, public; only forwards/answers
+//                        read-only commands (GATED_CMDS below stay off-limits)
 //   POST /login       — check DASHBOARD_PASSWORD, issue signed session cookie
-//   POST /logout      — clear the session cookie
-//   GET  /ws          — browser live socket; requires a valid session cookie
+//   POST /api/command — requires a valid session cookie; forwards a gated
+//                        (mutating) command to the device via the relay DO
 //   GET  /device      — Indoor unit's socket; requires the RELAY_TOKEN bearer header
-//   (all other paths) — served from static assets (login.html, style.css, etc.)
+//   (all other paths) — served from static assets (schedule.html, map.html, etc.)
 //
 // /ws and /device both route into one Durable Object holding the device socket
-// + N browser sockets, forwarding frames between them.
+// + N browser sockets, forwarding frames between them. Viewing data is public;
+// only mutating commands (manual zone/program control, saving the schedule,
+// pausing/resuming schedules) require the session cookie, enforced both at
+// POST /api/command and again inside the DO's forwardCommand RPC method.
+
+import { DurableObject } from "cloudflare:workers";
 
 const SESSION_HOURS = 24;
+
+// Commands that mutate device state -- only reachable via the cookie-gated
+// POST /api/command, never forwarded from a plain /ws browser message.
+const GATED_CMDS = new Set(["manualZone", "manualProgram", "saveSchedule", "setSchedulesEnabled"]);
+// Read-only commands a public, unauthenticated /ws connection may still send.
+const READONLY_WS_CMDS = new Set([
+  "getHistory", "getSchedule", "getSchedulesEnabled",
+  "getWeatherState", "getWeatherLog", "getWeatherCache",
+  "getCalibration", "getWeatherSettings",
+]);
 
 export default {
   async fetch(request, env) {
@@ -48,44 +65,44 @@ export default {
       });
     }
 
-    // ---- Logout: clear the cookie ----
-    if (url.pathname === "/logout" && request.method === "POST") {
-      return new Response(JSON.stringify({ ok: true }), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Set-Cookie": "ps_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0",
-        },
-      });
-    }
-
-    // ---- Browser live socket: valid session cookie ----
-    if (url.pathname === "/ws") {
+    // ---- Gated command: requires a valid session cookie ----
+    if (url.pathname === "/api/command" && request.method === "POST") {
       const token = readCookie(request.headers.get("Cookie") || "", "ps_session");
       if (!token || !(await verifySession(token, env.SESSION_KEY))) {
         return new Response("Unauthorized", { status: 401 });
       }
+      const cmd = await request.json().catch(() => null);
+      if (!cmd || !GATED_CMDS.has(cmd.cmd)) {
+        return new Response("Bad command", { status: 400 });
+      }
+      const id = env.RELAY.idFromName("singleton");
+      const result = await env.RELAY.get(id).forwardCommand(cmd);
+      if (!result.ok) {
+        return new Response(result.reason || "Failed", {
+          status: result.reason === "device-offline" ? 503 : 400,
+        });
+      }
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // ---- Browser live socket: public, read-only commands only ----
+    if (url.pathname === "/ws") {
       const id = env.RELAY.idFromName("singleton");
       return env.RELAY.get(id).fetch(request);
     }
 
-    // ---- Dashboard root: gate behind a session, else send to login ----
-    if (url.pathname === "/" || url.pathname === "/index.html") {
-      const token = readCookie(request.headers.get("Cookie") || "", "ps_session");
-      if (!token || !(await verifySession(token, env.SESSION_KEY))) {
-        return Response.redirect(url.origin + "/login.html", 302);
-      }
-      // Authenticated: fall through to static assets to serve index.html.
-    }
-
-    // ---- Everything else: static assets (login.html, css, js, favicon) ----
+    // ---- Everything else: static assets (index.html, css, js, favicon) ----
     return env.ASSETS.fetch(request);
   },
 };
 
 // ---- Durable Object: holds both sides, forwards between them ----
-export class PressureSenseRelay {
+export class PressureSenseRelay extends DurableObject {
   constructor(state, env) {
+    super(state, env);
     this.state = state;
     this.env = env;
     this.device = null;
@@ -219,9 +236,18 @@ export class PressureSenseRelay {
           } catch (_) {}
           return;
         }
+        // /ws is public -- only read-only commands may be sent here. Mutating
+        // commands (GATED_CMDS) must go through the cookie-gated
+        // POST /api/command instead, never straight from a browser socket.
+        if (!cmd || !READONLY_WS_CMDS.has(cmd.cmd)) {
+          if (cmd && cmd.cmd) {
+            try { server.send(JSON.stringify({ type: "error", cmd: cmd.cmd, reason: "not-allowed-via-ws" })); } catch (_) {}
+          }
+          return;
+        }
         if (this.device) {
           try { this.device.send(evt.data); } catch (_) {}
-        } else if (cmd && cmd.cmd) {
+        } else {
           try { server.send(JSON.stringify({ type: "error", cmd: cmd.cmd, reason: "device-offline" })); } catch (_) {}
         }
       });
@@ -230,6 +256,21 @@ export class PressureSenseRelay {
     }
 
     return new Response(null, { status: 101, webSocket: client });
+  }
+
+  // RPC method called from POST /api/command, after the Worker has already
+  // verified the session cookie. Re-checks the allow-list independently
+  // (defense in depth) so this method never blindly forwards arbitrary JSON
+  // even if called some other way in the future.
+  async forwardCommand(cmd) {
+    if (!cmd || !GATED_CMDS.has(cmd.cmd)) return { ok: false, reason: "bad-command" };
+    if (!this.device) return { ok: false, reason: "device-offline" };
+    try {
+      this.device.send(JSON.stringify(cmd));
+    } catch (_) {
+      return { ok: false, reason: "send-failed" };
+    }
+    return { ok: true };
   }
 }
 

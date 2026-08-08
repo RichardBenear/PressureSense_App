@@ -20,6 +20,25 @@ let scheduleRetryTimer = null;
 let scheduleRetryCount = 0;
 const SCHEDULE_RETRY_LIMIT = 5; // ~15s of retries at 3s each
 
+// Weather & Auto-Adjust panel data (weather-panel.js owns the actual
+// weatherState/weatherSettings/calibrationData/weatherLogEntries/
+// weatherCacheData vars and rendering; this file just requests them and
+// assigns responses into those shared globals). Read-only -- never merged
+// into `controllers`, never part of a saveSchedule payload.
+// cmd <-> response-type pairs -- weatherLoaded is keyed by the response
+// `type` (matching the switch cases below); WEATHER_REQUESTS drives both the
+// outbound retry loop and the `error` case's cmd->key lookup.
+const WEATHER_REQUESTS = [
+  { cmd: 'getWeatherState', key: 'weatherState' },
+  { cmd: 'getWeatherSettings', key: 'weatherSettings' },
+  { cmd: 'getWeatherLog', key: 'weatherLog' },
+  { cmd: 'getWeatherCache', key: 'weatherCache' },
+  { cmd: 'getCalibration', key: 'calibration' },
+];
+let weatherLoaded = { weatherState: false, weatherSettings: false, weatherLog: false, weatherCache: false, calibration: false };
+let weatherRetryTimer = null;
+let weatherRetryCount = 0;
+
 // ---------- helpers ----------
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
@@ -81,13 +100,17 @@ function editableDayPips(controllerId, programId, days) {
 }
 
 function renderProgramHeader(controller, program) {
-  const interval = getProgramInterval(program);   // zone-utils; neutral weather
+  const weatherPctFn = weatherPctFnFor(controller.id); // weather-panel.js; neutral until weatherState/Settings load
+  const interval = getProgramInterval(program, weatherPctFn);
   const endTime = minsToTime(interval.end);
   const crossesMidnight = interval.end >= 1440;
   const overlapPairs = findControllerOverlaps(controller).filter(pair => pair.includes(program.id));
   const overlapHtml = overlapPairs.length
     ? `<span class="ag-overlap-warning">&#9888; Overlaps ${overlapPairs.map(p => p.find(id => id !== program.id)).join(', ')}</span>`
     : '';
+  const weatherEntry = (weatherState.programs || []).find(p => p.controller === controller.id && p.program === program.id);
+  const skipBadgeHtml = (isWeatherAutoAdjustEnabled() && weatherEntry && weatherEntry.skip_next_run)
+    ? `<span class="ag-weather-skip-badge">&#9748; RAIN SKIP</span>` : '';
   return `
     <div class="ag-program-header" data-controller="${controller.id}" data-program="${program.id}">
       <span class="ag-program-badge">Program ${program.id}</span>
@@ -97,6 +120,7 @@ function renderProgramHeader(controller, program) {
       </label>
       <span class="ag-program-days">${editableDayPips(controller.id, program.id, program.days)}</span>
       <span class="ag-program-zonecount">${(program.zones || []).length} zones</span>
+      ${skipBadgeHtml}
       <span class="ag-program-duration">${interval.totalRun} min total</span>
       <span class="ag-program-endtime">ends ${endTime}${crossesMidnight ? ' <span class="ag-day-badge">+1</span>' : ''}</span>
       ${overlapHtml}
@@ -104,8 +128,21 @@ function renderProgramHeader(controller, program) {
 }
 
 function renderZoneRow(controllerId, program, zone, idx) {
-  const derivedStart = getZoneDerivedStart(program, idx);   // zone-utils, neutral weather
+  const weatherPctFn = weatherPctFnFor(controllerId); // weather-panel.js; neutral until weatherState/Settings load
+  const weatherPct = weatherPctFn(zone);
+  const wxRunMinutes = applyRunAdjustments(zone.run, program.seasonal_adjust_pct || 0, weatherPct);
+  const derivedStart = getZoneDerivedStart(program, idx, weatherPctFn);
   const startLabel = minsToTime(derivedStart) + (derivedStart >= 1440 ? ' +1' : '');
+
+  const zoneStateEntry = (weatherState.zones || []).find(z => z.controller === controllerId && Number(z.zone_number) === Number(zone.znumber));
+  let deficitHtml = '<span class="ag-help-text">—</span>';
+  if (zoneStateEntry && weatherSettings) {
+    const deficitMm = Number(zoneStateEntry.deficit_mm) || 0;
+    const referenceDeficitMm = Number(weatherSettings.reference_deficit_mm) || 6.0;
+    const maxDeficitMm = Number(weatherSettings.max_deficit_mm) || 25.0;
+    deficitHtml = `<span class="${deficitColorClass(deficitMm, referenceDeficitMm, maxDeficitMm)}">${deficitMm.toFixed(1)} mm</span>`;
+  }
+
   return `
     <tr data-controller="${controllerId}" data-program="${program.id}" data-zone-idx="${idx}">
       <td>${zone.znumber}</td>
@@ -114,7 +151,9 @@ function renderZoneRow(controllerId, program, zone, idx) {
       <td><input class="ag-inline-input sched-run-input" type="number" min="0" max="600"
                  value="${zone.run}" data-controller="${controllerId}" data-program="${program.id}"
                  data-zone-idx="${idx}" style="width:56px;"></td>
+      <td class="ag-zone-wx-run">${wxRunMinutes} ${wxPctHtml(weatherPct)}</td>
       <td class="ag-zone-starts-at">${startLabel}</td>
+      <td class="ag-zone-deficit">${deficitHtml}</td>
     </tr>`;
 }
 
@@ -125,7 +164,7 @@ function renderProgram(controller, program) {
       ${renderProgramHeader(controller, program)}
       <table class="ag-zone-table">
         <thead>
-          <tr><th>#</th><th>Name</th><th>Target PSI</th><th>Run (min)</th><th>Starts at</th></tr>
+          <tr><th>#</th><th>Name</th><th>Target PSI</th><th>Run (min)</th><th>WX Run</th><th>Starts at</th><th>Deficit</th></tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
@@ -226,11 +265,38 @@ function requestSchedule() {
   }, 3000);
 }
 
+// Same "blind fan-out, no queuing" reasoning as requestSchedule() above,
+// applied to the five Weather & Auto-Adjust requests -- each is retried
+// independently until its own response lands, since a dropped frame for one
+// shouldn't hold up the others.
+function requestWeatherData() {
+  weatherLoaded = { weatherState: false, weatherSettings: false, weatherLog: false, weatherCache: false, calibration: false };
+  weatherRetryCount = 0;
+  WEATHER_REQUESTS.forEach(r => wsSend({ cmd: r.cmd }));
+  if (weatherRetryTimer) clearInterval(weatherRetryTimer);
+  weatherRetryTimer = setInterval(() => {
+    const pending = WEATHER_REQUESTS.filter(r => !weatherLoaded[r.key]);
+    if (pending.length === 0) {
+      clearInterval(weatherRetryTimer);
+      weatherRetryTimer = null;
+      return;
+    }
+    weatherRetryCount++;
+    if (weatherRetryCount >= SCHEDULE_RETRY_LIMIT) {
+      clearInterval(weatherRetryTimer);
+      weatherRetryTimer = null;
+      showToast('No response from controller — weather data unavailable', true);
+      return;
+    }
+    pending.forEach(r => wsSend({ cmd: r.cmd }));
+  }, 3000);
+}
+
 function connect() {
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
   ws = new WebSocket(proto + '//' + location.host + '/ws');
 
-  ws.addEventListener('open', () => { setLink(true); requestSchedule(); });
+  ws.addEventListener('open', () => { setLink(true); requestSchedule(); requestWeatherData(); });
 
   ws.addEventListener('message', ev => {
     let m; try { m = JSON.parse(ev.data); } catch (_) { return; }
@@ -243,6 +309,32 @@ function connect() {
           controllers = Array.isArray(m.controllers) ? m.controllers : [];
           render();
         }
+        renderWeatherPanel(); // no-op until weatherSettings has also landed
+        break;
+      case 'weatherState':
+        weatherState = m; if (!Array.isArray(weatherState.programs)) weatherState.programs = [];
+        weatherLoaded.weatherState = true;
+        rerenderPreservingFocus(); renderWeatherPanel();
+        break;
+      case 'weatherSettings':
+        weatherSettings = m;
+        weatherLoaded.weatherSettings = true;
+        rerenderPreservingFocus(); renderWeatherPanel();
+        break;
+      case 'weatherLog':
+        weatherLogEntries = Array.isArray(m.log) ? m.log : [];
+        weatherLoaded.weatherLog = true;
+        renderWeatherPanel();
+        break;
+      case 'weatherCache':
+        weatherCacheData = m; // has .daily directly (Master splices "type" onto the raw cache object)
+        weatherLoaded.weatherCache = true;
+        renderWeatherPanel();
+        break;
+      case 'calibration':
+        calibrationData = m; if (!Array.isArray(calibrationData.zones)) calibrationData.zones = [];
+        weatherLoaded.calibration = true;
+        rerenderPreservingFocus(); renderWeatherPanel();
         break;
       case 'ack':
         if (m.cmd === 'saveSchedule') {
@@ -254,6 +346,9 @@ function connect() {
         if (m.cmd === 'getSchedule') {
           if (scheduleRetryTimer) { clearInterval(scheduleRetryTimer); scheduleRetryTimer = null; }
           showToast('Indoor unit not connected — schedule unavailable', true);
+        } else {
+          const wr = WEATHER_REQUESTS.find(r => r.cmd === m.cmd);
+          if (wr) weatherLoaded[wr.key] = true; // stop retrying a command the device rejected/can't answer
         }
         break;
       default:
@@ -287,14 +382,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Overlap guard: warn but allow (mirrors CONFIG page behavior).
     const anyOverlap = controllers.some(c => findControllerOverlaps(c).length > 0);
     if (anyOverlap && !confirm('Some programs overlap on shared days. Save anyway?')) return;
-    wsSend({ cmd: 'saveSchedule', controllers });
-  });
-
-  document.getElementById('logout-link').addEventListener('click', async (e) => {
-    e.preventDefault();
-    if (dirty && !confirm('You have unsaved changes. Sign out anyway?')) return;
-    try { await fetch('/logout', { method: 'POST' }); } catch (_) {}
-    window.location.href = '/login.html';
+    sendGatedCommand({ cmd: 'saveSchedule', controllers })
+      .catch(err => { if (err.message !== 'cancelled') showToast(err.message || 'Failed', true); });
   });
 
   window.addEventListener('beforeunload', (e) => {

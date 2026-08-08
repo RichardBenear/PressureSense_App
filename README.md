@@ -1,6 +1,6 @@
 # PressureSense App
 
-PressureSense App is a Cloudflare Worker that exposes the [PressureSense](../PressureSense_Master) irrigation pressure-monitoring system to the public internet. It's a thin, password-gated mirror of the master controller's own local web UI — live pressure chart with history, a limited schedule editor, manual zone/program control, and a live sprinkler zone map — reachable from anywhere, without exposing the master controller itself to the internet.
+PressureSense App is a Cloudflare Worker that exposes the [PressureSense](../PressureSense_Master) irrigation pressure-monitoring system to the public internet. It's a thin mirror of the master controller's own local web UI — live pressure chart with history, a limited schedule editor, manual zone/program control, and a live sprinkler zone map — reachable from anywhere, without exposing the master controller itself to the internet. Viewing every page is public; a shared password is only required to actually change something (manual zone/program start or stop, saving the schedule, pausing/resuming scheduled watering).
 
 ## System overview
 
@@ -17,8 +17,8 @@ Browser  <--wss-->  Cloudflare Worker (this repo)  <--wss-->  Indoor unit  <--ws
 
 `src/index.js` is the entire Worker:
 
-- **`export default { fetch }`** — a plain router: `/device` (the Indoor unit's socket, gated by a `RELAY_TOKEN` bearer header), `/login` / `/logout` (password → signed session cookie, HMAC-SHA256 over an expiry timestamp, no server-side session storage), `/ws` (the browser's socket, gated by that session cookie), `/` (redirects to `/login.html` if unauthenticated, otherwise falls through), and everything else served from `public/` as static assets.
-- **`PressureSenseRelay` (Durable Object, SQLite-backed)** — holds one device socket and a `Set` of browser sockets in memory, and blindly fans out every frame from the device to every browser (and vice versa, for the handful of commands the Indoor unit allow-lists through to the master). It is **not** a general-purpose message parser — the only messages it looks inside are:
+- **`export default { fetch }`** — a plain router: `/device` (the Indoor unit's socket, gated by a `RELAY_TOKEN` bearer header), `/login` (password → signed session cookie, HMAC-SHA256 over an expiry timestamp, no server-side session storage), `/api/command` (gated by that session cookie; the only way a mutating command reaches the device), `/ws` (the browser's socket — public, but will only forward/answer read-only commands), `/` and everything else served from `public/` as static assets, all public.
+- **`PressureSenseRelay` (Durable Object, SQLite-backed)** — holds one device socket and a `Set` of browser sockets in memory, fans out every frame from the device to every browser, and forwards a browser's read-only WS commands or a `/api/command` caller's already-cookie-verified mutating command on to the device via its `forwardCommand` RPC method (which independently re-checks the mutating-command allow-list). It is **not** a general-purpose message parser — the only messages it looks inside are:
   - `sensorUpdate` — recorded into a `history` SQLite table (`ts, psi, zoneAvgPsi, zoneNumber, controller, allOff`), pruned to a rolling 24h window on every insert. `allOff` is stored but not used for active-zone logic — see [Design notes](#design-notes).
   - `manualZoneStatus` — diffed against the previous run list to record discrete `manual_events` (`ts, relay, controller, kind: 'start'|'stop'`), also pruned to 24h.
   - `getHistory` (a browser-only command, never forwarded to the device) — answered directly from those two tables, so a newly-connecting browser can backfill its chart and zone/manual markers without waiting on live traffic, and without ever touching the master.
@@ -60,8 +60,9 @@ Message shapes match the master's own `build*Json()` functions verbatim — the 
 | Master → browser | `schedulesEnabled` | Pause/resume state |
 | Master → browser | `ack` / `manualZoneAck` / `manualProgramAck` | Command success/failure + message |
 | **Worker (not master) → browser** | `history` | `{ points: [...], manualEvents: [...] }` from the Durable Object's own SQLite tables — answers `getHistory`, never touches the master |
-| Browser → master (relayed) | `getSchedule`, `saveSchedule`, `getSchedulesEnabled`, `setSchedulesEnabled` | Schedule read/write, pause/resume |
-| Browser → master (relayed) | `manualZone`, `manualProgram` | Start/stop a manual zone or lettered program; `manualProgram` also takes `action: 'next'` to skip a running program straight to its next zone (or stop it, if the current zone is the last one) |
+| Browser → master, via public `/ws` (relayed) | `getSchedule`, `getSchedulesEnabled` | Read-only; no password required |
+| Browser → master, via cookie-gated `POST /api/command` (relayed) | `saveSchedule`, `setSchedulesEnabled` | Schedule write, pause/resume |
+| Browser → master, via cookie-gated `POST /api/command` (relayed) | `manualZone`, `manualProgram` | Start/stop a manual zone or lettered program; `manualProgram` also takes `action: 'next'` to skip a running program straight to its next zone (or stop it, if the current zone is the last one) |
 | **Browser → Worker (not relayed)** | `getHistory` | Answered locally by the Durable Object; the master never sees this command |
 
 The Indoor unit enforces its own allow-list on which commands from the relay are permitted to reach the master (`getSchedule`, `saveSchedule`, `getSchedulesEnabled`, `setSchedulesEnabled`, `manualZone`, `manualProgram`) — everything else from a remote browser is dropped there, not here.
@@ -88,7 +89,7 @@ public/map.html            MAP page markup
 public/map.js              MAP page logic: SVG load, zone highlighting, zoom/pan
 public/sprinklers_map.svg  Sprinkler layout vector art (copied from the master's own asset)
 public/zone_mappings.txt   SVG layer name -> controller/zone-number mapping (copied from master)
-public/login.html          Password sign-in page
+public/auth-modal.js       Password-prompt modal + sendGatedCommand() helper for mutating actions
 public/style.css           Shared stylesheet -- kept byte-identical to the master's own style.css
 public/zone-utils.js       Shared schedule math (derived start/end times, overlap detection),
                            ported from the master, used by schedule.js
@@ -101,7 +102,7 @@ image/                     README screenshots (CHART, SCHEDULE, MAP pages)
 
 1. **Secrets** (set once via `wrangler secret put <NAME>`, not committed anywhere):
    - `RELAY_TOKEN` — bearer token the Indoor unit presents to authenticate its `/device` connection.
-   - `DASHBOARD_PASSWORD` — the single shared password for `/login`.
+   - `DASHBOARD_PASSWORD` — the single shared password for `/login`, required only to perform a mutating action (manual zone/program control, saving the schedule, pausing/resuming schedules); viewing every page is public.
    - `SESSION_KEY` — HMAC signing key for session cookies.
 2. **Local development**:
    ```

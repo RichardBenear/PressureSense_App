@@ -714,10 +714,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     const loading = $('map-loading');
     if (loading) loading.textContent = 'MAP ERROR';
   }
-
-  document.getElementById('logout-link').addEventListener('click', async (e) => {
-    e.preventDefault();
-    try { await fetch('/logout', { method: 'POST' }); } catch (_) {}
-    window.location.href = '/login.html';
-  });
 });
