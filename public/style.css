@@ -720,9 +720,8 @@ body.ag-page::before {
 
 .ag-program-header {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 6px;
   padding: 10px 14px;
   background: #17202b;
   border-bottom: 1px solid #1e2d3d;
@@ -734,7 +733,20 @@ body.ag-page::before {
   background: transparent;
 }
 
-.ag-program-start, .ag-program-zonecount, .ag-program-duration, .ag-program-endtime {
+.ag-program-header-top {
+  display: flex;
+  align-items: center;
+}
+
+.ag-program-header-schedule, .ag-program-header-adjustments {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.ag-program-start, .ag-program-zonecount, .ag-program-duration, .ag-program-endtime,
+.ag-program-seasonal, .ag-program-zonedelay {
   font-family: 'Share Tech Mono', monospace;
   font-size: 11px;
   color: #8ab0ca;
@@ -868,14 +880,14 @@ body.ag-page::before {
   font-weight: 600;
 }
 
-.ag-zone-wx-run {
+.ag-zone-adj-run {
   color: #8ab0ca;
   font-family: 'Share Tech Mono', monospace;
   font-weight: 600;
 }
 
-.ag-wx-pct-low  { color: #ef4444; }
-.ag-wx-pct-high { color: #22c55e; }
+.ag-adj-pct-low  { color: #ef4444; }
+.ag-adj-pct-high { color: #22c55e; }
 
 .ag-zone-deficit {
   font-family: 'Share Tech Mono', monospace;

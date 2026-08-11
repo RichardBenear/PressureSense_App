@@ -42,12 +42,13 @@ function isWeatherAutoAdjustEnabled() {
   return Boolean(weatherSettings && weatherSettings.auto_adjust);
 }
 
-// Colors a WX RUN % using this codebase's existing red/green convention --
-// red below 100 (less water), green above 100 (more water), neutral at 100.
-function wxPctHtml(weatherPct) {
-  const pct = Math.round(weatherPct);
-  if (pct < 100) return `<span class="ag-wx-pct-low">${pct}%</span>`;
-  if (pct > 100) return `<span class="ag-wx-pct-high">${pct}%</span>`;
+// Colors an adjustment % using this codebase's existing red/green convention
+// -- red below 100 (less water), green above 100 (more water), neutral at
+// 100.
+function adjPctHtml(pctIn) {
+  const pct = Math.round(pctIn);
+  if (pct < 100) return `<span class="ag-adj-pct-low">${pct}%</span>`;
+  if (pct > 100) return `<span class="ag-adj-pct-high">${pct}%</span>`;
   return `${pct}%`;
 }
 

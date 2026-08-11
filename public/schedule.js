@@ -5,8 +5,11 @@
 //   saveSchedule -> write controllers array back (Master writes controllers.json)
 //
 // Editable: zone run (minutes), program start time, program days.
-// Read-only here (edit locally): zone name, target PSI, seasonal %, zone delay,
-// add/delete/reorder, calibration, weather. Those aren't on the relay by design.
+// Read-only here (edit locally): zone name, target PSI, seasonal %, zone
+// delay, add/delete/reorder, calibration, weather. Seasonal %/zone delay are
+// shown on each program panel (and factored into the Run Adj column) for
+// visibility, but stay Master-only to actually change -- not on the relay
+// as editable fields by design.
 //
 // Reuses zone-utils.js (dayPipsHtml, getProgramInterval, minsToTime, etc.) so
 // derived start times and overlap detection match the CONFIG page exactly.
@@ -111,26 +114,46 @@ function renderProgramHeader(controller, program) {
   const weatherEntry = (weatherState.programs || []).find(p => p.controller === controller.id && p.program === program.id);
   const skipBadgeHtml = (isWeatherAutoAdjustEnabled() && weatherEntry && weatherEntry.skip_next_run)
     ? `<span class="ag-weather-skip-badge">&#9748; RAIN SKIP</span>` : '';
+  const seasonalPct = program.seasonal_adjust_pct || 0;
+  const seasonalText = (seasonalPct > 0 ? '+' : '') + seasonalPct + '%';
   return `
     <div class="ag-program-header" data-controller="${controller.id}" data-program="${program.id}">
-      <span class="ag-program-badge">Program ${program.id}</span>
-      <label class="ag-field-label" style="min-width:auto;">START
-        <input class="ag-inline-input sched-start-input" type="time" value="${escapeHtml(program.start)}"
-               data-controller="${controller.id}" data-program="${program.id}" style="width:110px;">
-      </label>
-      <span class="ag-program-days">${editableDayPips(controller.id, program.id, program.days)}</span>
-      <span class="ag-program-zonecount">${(program.zones || []).length} zones</span>
-      ${skipBadgeHtml}
-      <span class="ag-program-duration">${interval.totalRun} min total</span>
-      <span class="ag-program-endtime">ends ${endTime}${crossesMidnight ? ' <span class="ag-day-badge">+1</span>' : ''}</span>
-      ${overlapHtml}
+      <div class="ag-program-header-top">
+        <span class="ag-program-badge">Program ${program.id}</span>
+      </div>
+      <div class="ag-program-header-schedule">
+        <label class="ag-field-label" style="min-width:auto;">START
+          <input class="ag-inline-input sched-start-input" type="time" value="${escapeHtml(program.start)}"
+                 data-controller="${controller.id}" data-program="${program.id}" style="width:110px;">
+        </label>
+        <span class="ag-program-days">${editableDayPips(controller.id, program.id, program.days)}</span>
+        <span class="ag-program-zonecount">${(program.zones || []).length} zones</span>
+        ${skipBadgeHtml}
+        <span class="ag-program-duration">${interval.totalRun} min total</span>
+        <span class="ag-program-endtime">ends ${endTime}${crossesMidnight ? ' <span class="ag-day-badge">+1</span>' : ''}</span>
+        ${overlapHtml}
+      </div>
+      <div class="ag-program-header-adjustments">
+        <span class="ag-program-seasonal">Seasonal Adj: ${seasonalText}</span>
+        <span class="ag-program-zonedelay">Zone Delay: ${program.zone_delay_sec || 0} sec</span>
+      </div>
     </div>`;
+}
+
+// Run Adj gives seasonal_adjust_pct precedence over weather_adjust_pct: when
+// a program has a non-zero seasonal adjustment, that's shown (and weather is
+// ignored for THIS column) regardless of whether weather auto-adjust is on;
+// when seasonal is 0%, the column falls back to showing weather's effect,
+// same as it always did. Mirrors PressureSense_Master/data/config.js.
+function computeRunAdj(baseRunMinutes, seasonalPct, weatherPct) {
+  if (seasonalPct !== 0) return { minutes: applyRunAdjustments(baseRunMinutes, seasonalPct, 100), pct: 100 + seasonalPct };
+  return { minutes: applyRunAdjustments(baseRunMinutes, 0, weatherPct), pct: weatherPct };
 }
 
 function renderZoneRow(controllerId, program, zone, idx) {
   const weatherPctFn = weatherPctFnFor(controllerId); // weather-panel.js; neutral until weatherState/Settings load
-  const weatherPct = weatherPctFn(zone);
-  const wxRunMinutes = applyRunAdjustments(zone.run, program.seasonal_adjust_pct || 0, weatherPct);
+  const seasonalPct = program.seasonal_adjust_pct || 0;
+  const runAdj = computeRunAdj(zone.run, seasonalPct, weatherPctFn(zone));
   const derivedStart = getZoneDerivedStart(program, idx, weatherPctFn);
   const startLabel = minsToTime(derivedStart) + (derivedStart >= 1440 ? ' +1' : '');
 
@@ -151,7 +174,7 @@ function renderZoneRow(controllerId, program, zone, idx) {
       <td><input class="ag-inline-input sched-run-input" type="number" min="0" max="600"
                  value="${zone.run}" data-controller="${controllerId}" data-program="${program.id}"
                  data-zone-idx="${idx}" style="width:56px;"></td>
-      <td class="ag-zone-wx-run">${wxRunMinutes} ${wxPctHtml(weatherPct)}</td>
+      <td class="ag-zone-adj-run">${runAdj.minutes} ${adjPctHtml(runAdj.pct)}</td>
       <td class="ag-zone-starts-at">${startLabel}</td>
       <td class="ag-zone-deficit">${deficitHtml}</td>
     </tr>`;
@@ -164,7 +187,7 @@ function renderProgram(controller, program) {
       ${renderProgramHeader(controller, program)}
       <table class="ag-zone-table">
         <thead>
-          <tr><th>#</th><th>Name</th><th>Target PSI</th><th>Run (min)</th><th>WX Run</th><th>Starts at</th><th>Deficit</th></tr>
+          <tr><th>#</th><th>Name</th><th>Target PSI</th><th>Run (min)</th><th>Run Adj</th><th>Starts at</th><th>Deficit</th></tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>

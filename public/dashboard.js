@@ -365,6 +365,26 @@ function initChart() {
   });
 }
 
+// SEASONAL/ZtoZ DELAY status-bar items -- ported from
+// PressureSense_Master/data/index.js's loadProgramAdjustmentsStatusBar(),
+// operating on controllersCache directly (no zoneDoc wrapper here).
+function loadProgramAdjustmentsStatusBar(controllersArr) {
+  const seasonalParts = [];
+  const delayParts = [];
+  (controllersArr || []).forEach(c => {
+    (c.programs || []).forEach(p => {
+      if (p.seasonal_adjust_pct) {
+        seasonalParts.push(c.id.toUpperCase() + '/' + p.id + ' ' + (p.seasonal_adjust_pct > 0 ? '+' : '') + p.seasonal_adjust_pct + '%');
+      }
+      if (p.zone_delay_sec) {
+        delayParts.push(c.id.toUpperCase() + '/' + p.id + ' ' + p.zone_delay_sec + 's');
+      }
+    });
+  });
+  document.getElementById('seasonal-status-display').textContent = seasonalParts.length ? seasonalParts.join(', ') : '0%';
+  document.getElementById('delay-status-display').textContent = delayParts.length ? delayParts.join(' - ') : '—';
+}
+
 // ---------- manual-zone dropdowns (from `schedule` message) ----------
 function populateManualZoneSelects() {
   const controller = document.getElementById('program-controller-select').value.toLowerCase();
@@ -507,6 +527,7 @@ function connect() {
         controllersCache = Array.isArray(m.controllers) ? m.controllers : [];
         scheduleLoaded = true;
         populateManualZoneSelects();
+        loadProgramAdjustmentsStatusBar(controllersCache);
         break;
       case 'schedulesEnabled':
         schedulesEnabledLoaded = true;
