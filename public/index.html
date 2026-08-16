@@ -76,9 +76,9 @@
                  role="img" aria-label="Circular pressure gauge showing current PSI">
               <defs>
                 <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stop-color="#22c55e"/>
+                  <stop offset="0%" stop-color="#34d873"/>
                   <stop offset="60%" stop-color="#0d6efd"/>
-                  <stop offset="100%" stop-color="#ef4444"/>
+                  <stop offset="100%" stop-color="#f87171"/>
                 </linearGradient>
               </defs>
               <path d="M 20 80 A 50 50 0 1 1 120 80" fill="none" stroke="#1e2d3d"
@@ -87,11 +87,11 @@
                     stroke="url(#gaugeGrad)" stroke-width="8" stroke-linecap="round"
                     stroke-dasharray="157" stroke-dashoffset="157"/>
               <text id="gauge-val" x="70" y="72" text-anchor="middle"
-                    font-family="'Share Tech Mono', monospace" font-size="22" fill="#e8f4fd">—</text>
+                    font-family="'Share Tech Mono', monospace" font-size="24" fill="#f2f7fc">—</text>
               <text x="15" y="88" text-anchor="middle"
-                    font-family="'Share Tech Mono', monospace" font-size="8" fill="#3d5a73">0</text>
+                    font-family="'Share Tech Mono', monospace" font-size="10" fill="#d6e6f4">0</text>
               <text x="125" y="88" text-anchor="middle"
-                    font-family="'Share Tech Mono', monospace" font-size="8" fill="#3d5a73">100</text>
+                    font-family="'Share Tech Mono', monospace" font-size="10" fill="#d6e6f4">100</text>
             </svg>
           </div>
 
@@ -204,8 +204,8 @@
             <div id="chart-pressure" class="ag-chart-plot"></div>
             <div class="ag-chart-legend">
               <span class="ag-legend-item"><span class="ag-legend-swatch" style="background:#0d6efd;"></span>PRESSURE</span>
-              <span class="ag-legend-item"><span class="ag-legend-swatch" style="background:#f59e0b; width:8px; height:8px; border-radius:50%;"></span>WARN</span>
-              <span class="ag-legend-item"><span class="ag-legend-swatch" style="background:#ef4444; width:8px; height:8px; border-radius:50%;"></span>ALERT</span>
+              <span class="ag-legend-item"><span class="ag-legend-swatch" style="background:#fbbf24; width:8px; height:8px; border-radius:50%;"></span>WARN</span>
+              <span class="ag-legend-item"><span class="ag-legend-swatch" style="background:#f87171; width:8px; height:8px; border-radius:50%;"></span>ALERT</span>
             </div>
           </div>
 
@@ -216,8 +216,8 @@
 
     <footer class="ag-footer">
       <div class="ag-footer-right">
-        <span>ADC: <span id="footer-adc-voltage" style="color:#f59e0b;">—</span></span>
-        <span>LINK: <span id="footer-link" style="color:#22c55e;">—</span></span>
+        <span>ADC: <span id="footer-adc-voltage" style="color:#fbbf24;">—</span></span>
+        <span>LINK: <span id="footer-link" style="color:#34d873;">—</span></span>
       </div>
     </footer>
 

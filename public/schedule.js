@@ -60,24 +60,24 @@ function ctrlBadgeClass(ctrl) {
 function showToast(msg, isError = false) {
   const t = document.getElementById('toast');
   document.getElementById('toast-msg').textContent = msg;
-  t.style.borderLeftColor = isError ? '#ef4444' : '#22c55e';
-  t.style.color = isError ? '#ef4444' : '#22c55e';
+  t.style.borderLeftColor = isError ? '#f87171' : '#34d873';
+  t.style.color = isError ? '#f87171' : '#34d873';
   t.classList.remove('hidden');
   setTimeout(() => t.classList.add('hidden'), 3500);
 }
 
 function setLink(up) {
   const el = document.getElementById('footer-link');
-  if (el) { el.textContent = up ? 'ONLINE' : 'OFFLINE'; el.style.color = up ? '#22c55e' : '#ef4444'; }
+  if (el) { el.textContent = up ? 'ONLINE' : 'OFFLINE'; el.style.color = up ? '#34d873' : '#f87171'; }
   const sys = document.getElementById('system-status');
-  if (sys) { sys.textContent = up ? 'ONLINE' : 'OFFLINE'; sys.style.color = up ? '' : '#ef4444'; }
+  if (sys) { sys.textContent = up ? 'ONLINE' : 'OFFLINE'; sys.style.color = up ? '' : '#f87171'; }
 }
 
 function setDirty(v) {
   dirty = v;
   const el = document.getElementById('unsaved-indicator');
   el.textContent = v ? 'UNSAVED' : 'NONE';
-  el.style.color = v ? '#f59e0b' : '';
+  el.style.color = v ? '#fbbf24' : '';
 }
 
 function countZones() {

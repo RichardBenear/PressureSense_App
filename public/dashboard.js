@@ -30,8 +30,8 @@ const MAX_CHART_POINTS = 480;
 // exist for transitions that happened while a browser was connected -- the
 // DO's history table records psi/zoneAvgPsi only, not zone/controller, so
 // the initial history backfill can't be retroactively annotated.
-const ZONE_MARKER_COLOR = 'rgba(96, 165, 250, 0.72)';              // yard, scheduled -- matches .ag-ctrl-yard (#60a5fa)
-const ZONE_MARKER_COLOR_FIELD = 'rgba(34, 197, 94, 0.72)';         // field, scheduled -- matches .ag-ctrl-field (#22c55e)
+const ZONE_MARKER_COLOR = 'rgba(126, 193, 255, 0.72)';             // yard, scheduled -- matches .ag-ctrl-yard (#7ec1ff)
+const ZONE_MARKER_COLOR_FIELD = 'rgba(52, 216, 115, 0.72)';        // field, scheduled -- matches .ag-ctrl-field (#34d873)
 const MANUAL_ZONE_MARKER_COLOR = 'rgba(147, 197, 253, 0.9)';       // yard, manual -- brighter blue (#93c5fd)
 const MANUAL_ZONE_MARKER_COLOR_FIELD = 'rgba(134, 239, 172, 0.9)'; // field, manual -- brighter green (#86efac)
 const MARKER_MAX_AGE_MS = 24 * 3600 * 1000;
@@ -55,18 +55,18 @@ let deviceOfflineNoticeShown = false; // dedupe the offline toast across retries
 function showToast(msg, isError = false) {
   const t = document.getElementById('toast');
   document.getElementById('toast-msg').textContent = msg;
-  t.style.borderLeftColor = isError ? '#ef4444' : '#22c55e';
-  t.style.color = isError ? '#ef4444' : '#22c55e';
+  t.style.borderLeftColor = isError ? '#f87171' : '#34d873';
+  t.style.color = isError ? '#f87171' : '#34d873';
   t.classList.remove('hidden');
   setTimeout(() => t.classList.add('hidden'), 3500);
 }
 
 function setLink(up) {
   const el = document.getElementById('footer-link');
-  if (el) { el.textContent = up ? 'ONLINE' : 'OFFLINE'; el.style.color = up ? '#22c55e' : '#ef4444'; }
+  if (el) { el.textContent = up ? 'ONLINE' : 'OFFLINE'; el.style.color = up ? '#34d873' : '#f87171'; }
   const sys = document.getElementById('system-status');
   const dot = document.querySelector('.ag-status-dot');
-  if (sys) { sys.textContent = up ? 'ONLINE' : 'OFFLINE'; sys.style.color = up ? '' : '#ef4444'; }
+  if (sys) { sys.textContent = up ? 'ONLINE' : 'OFFLINE'; sys.style.color = up ? '' : '#f87171'; }
   if (dot) dot.classList.toggle('offline', !up);
 }
 
@@ -208,8 +208,8 @@ function makePoint(x, psi, avgPsi) {
   const target = Number(avgPsi);
   if (target > 0) {
     const dev = Number(psi) - target;
-    if (Math.abs(dev) >= PRESSURE_ALERT_DEVIATION) color = '#ef4444';
-    else if (Math.abs(dev) >= PRESSURE_WARN_DEVIATION) color = '#f59e0b';
+    if (Math.abs(dev) >= PRESSURE_ALERT_DEVIATION) color = '#f87171';
+    else if (Math.abs(dev) >= PRESSURE_WARN_DEVIATION) color = '#fbbf24';
   }
   return { x, y: Number(psi), color, marker: { enabled: true, symbol: 'circle', radius: 2, fillColor: color } };
 }
@@ -350,12 +350,12 @@ function initChart() {
     accessibility: { enabled: false },
     xAxis: {
       type: 'datetime',
-      labels: { style: { color: '#5f7da0', fontFamily: 'Share Tech Mono', fontSize: '10px' }, format: '{value:%H:%M:%S}' },
+      labels: { style: { color: '#d6e6f4', fontFamily: 'Share Tech Mono', fontSize: '12px' }, format: '{value:%H:%M:%S}' },
       gridLineColor: '#16283d', lineColor: '#1c3350'
     },
-    yAxis: { min: 0, max: 70, tickInterval: 10, title: { text: null }, labels: { style: { color: '#5f7da0', fontFamily: 'Share Tech Mono', fontSize: '10px' } }, gridLineColor: '#456a84' },
+    yAxis: { min: 0, max: 70, tickInterval: 10, title: { text: null }, labels: { style: { color: '#d6e6f4', fontFamily: 'Share Tech Mono', fontSize: '12px' } }, gridLineColor: '#456a84' },
     tooltip: {
-      backgroundColor: '#0e1a2b', borderColor: '#1c3350', style: { color: '#e8f4fd' },
+      backgroundColor: '#0e1a2b', borderColor: '#1c3350', style: { color: '#f2f7fc' },
       formatter: function () {
         return `<b>${Highcharts.dateFormat('%H:%M:%S', this.x)}</b><br>${this.y.toFixed(1)} PSI`;
       }

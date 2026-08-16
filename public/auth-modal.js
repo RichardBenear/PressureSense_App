@@ -12,9 +12,9 @@
     style.textContent = `
       .authm-backdrop { position: fixed; inset: 0; background: rgba(4,8,16,0.72); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 24px; }
       .authm-card { width: 100%; max-width: 340px; background: #0e1a2b; border: 1px solid #1c3350; border-radius: 12px; padding: 28px 24px; box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
-      .authm-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: 1px; color: #e8f4fd; margin-bottom: 4px; }
+      .authm-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: 1px; color: #f2f7fc; margin-bottom: 4px; }
       .authm-sub { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #5f7da0; letter-spacing: 1px; margin-bottom: 18px; }
-      .authm-field input { width: 100%; box-sizing: border-box; background: #08111d; border: 1px solid #23405f; border-radius: 8px; color: #e8f4fd; font-family: 'Barlow', sans-serif; font-size: 16px; padding: 11px 13px; outline: none; }
+      .authm-field input { width: 100%; box-sizing: border-box; background: #08111d; border: 1px solid #23405f; border-radius: 8px; color: #f2f7fc; font-family: 'Barlow', sans-serif; font-size: 16px; padding: 11px 13px; outline: none; }
       .authm-field input:focus { border-color: #0d6efd; }
       .authm-actions { display: flex; gap: 8px; margin-top: 14px; }
       .authm-btn { flex: 1; border: none; border-radius: 8px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 1px; padding: 11px; cursor: pointer; }
@@ -22,7 +22,7 @@
       .authm-btn-primary:hover { background: #2b7cff; }
       .authm-btn-primary:disabled { opacity: 0.6; cursor: default; }
       .authm-btn-ghost { background: transparent; color: #7f9cc0; border: 1px solid #23405f; }
-      .authm-error { color: #ef4444; font-family: 'Share Tech Mono', monospace; font-size: 12px; text-align: center; min-height: 16px; margin-top: 12px; }
+      .authm-error { color: #f87171; font-family: 'Share Tech Mono', monospace; font-size: 12px; text-align: center; min-height: 16px; margin-top: 12px; }
     `;
     document.head.appendChild(style);
 
