@@ -12,6 +12,12 @@
 const PHOTOS = [
   { file: 'IMG_4394.jpeg', description: 'Indoor Unit - Map Page' },
   { file: 'IMG_4396.jpeg', description: 'Indoor Unit - Chart Page' },
+  { file: 'MasterUnit.jpg', description: 'Master Unit' },
+  { file: 'PressureSenseArch.jpg', description: 'System Architecture' },
+  { file: 'pressure-sense.local.jpg', description: 'Master-Local Dashboard' },
+  { file: 'PressureSenseAppChart.jpg', description: 'App - Chart Page' },
+  { file: 'PressureSenseAppMap.jpg', description: 'App - Map Page' },
+  { file: 'PressureSenseAppSchedule.jpg', description: 'App - Schedule Page' },
 ];
 
 function escapeHtml(s) {
